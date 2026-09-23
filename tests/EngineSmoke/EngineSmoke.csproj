@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <NoWarn>NU1701;CA1416</NoWarn>
+  </PropertyGroup>
+
+  <!-- Pure-managed parts of the plugin (no running Rhino needed): rule model + clipping. -->
+  <ItemGroup>
+    <Compile Include="..\..\src\ZoningEnvelope\Model\ZoneCode.cs" Link="Model\ZoneCode.cs" />
+    <Compile Include="..\..\src\ZoningEnvelope\Engine\PolygonClip.cs" Link="Engine\PolygonClip.cs" />
+    <EmbeddedResource Include="..\..\src\ZoningEnvelope\codes\*.json" LogicalName="codes.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RhinoCommon" Version="8.21.25188.17001" />
+  </ItemGroup>
+
+  <!-- RhinoCommon is compile-only in the package; borrow the installed copy for the managed structs used here. -->
+  <ItemGroup>
+    <None Include="$(ProgramFiles)\Rhino 8\System\RhinoCommon.dll" Link="RhinoCommon.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+
+</Project>

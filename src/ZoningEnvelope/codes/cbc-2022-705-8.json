@@ -1,0 +1,24 @@
+{
+  "id": "cbc-2022-705-8",
+  "kind": "openings",
+  "jurisdiction": "California Building Code 2022 (IBC 2021)",
+  "name": "Table 705.8 Maximum area of exterior wall openings",
+  "source": "CBC 2022 / IBC 2021 Table 705.8; fire separation distance per IBC Chapter 2 definition",
+  "verified": "2026-09-23 rows confirmed against the IBC table text (WA SBCC copy) and a secondary summary",
+  "notes": [
+    "Percent of the exterior wall area, per story, per fire separation distance of that wall.",
+    "Fire separation distance is measured perpendicular from the wall to the closest lot line, to the centerline of a street or alley, or to an imaginary line between two buildings on the same lot.",
+    "Flag street edges and enter the street width so the tool measures to the centerline.",
+    "-1 = No Limit, 0 = Not Permitted. Footnote exceptions (Group R-3, H, party walls, etc.) are not modeled."
+  ],
+  "rows": [
+    { "fromFeet": 0,  "toFeet": 3,   "unprotectedNonsprinklered": 0,  "unprotectedSprinklered": 0,  "protected": 0 },
+    { "fromFeet": 3,  "toFeet": 5,   "unprotectedNonsprinklered": 0,  "unprotectedSprinklered": 15, "protected": 15 },
+    { "fromFeet": 5,  "toFeet": 10,  "unprotectedNonsprinklered": 10, "unprotectedSprinklered": 25, "protected": 25 },
+    { "fromFeet": 10, "toFeet": 15,  "unprotectedNonsprinklered": 15, "unprotectedSprinklered": 45, "protected": 45 },
+    { "fromFeet": 15, "toFeet": 20,  "unprotectedNonsprinklered": 25, "unprotectedSprinklered": 75, "protected": 75 },
+    { "fromFeet": 20, "toFeet": 25,  "unprotectedNonsprinklered": 45, "unprotectedSprinklered": -1, "protected": -1 },
+    { "fromFeet": 25, "toFeet": 30,  "unprotectedNonsprinklered": 70, "unprotectedSprinklered": -1, "protected": -1 },
+    { "fromFeet": 30, "toFeet": -1,  "unprotectedNonsprinklered": -1, "unprotectedSprinklered": -1, "protected": -1 }
+  ]
+}

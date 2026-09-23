@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <TargetExt>.rhp</TargetExt>
+    <AssemblyName>ZoningEnvelope</AssemblyName>
+    <RootNamespace>ZoningEnvelope</RootNamespace>
+    <Version>0.1.0</Version>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>NU1701;CA1416</NoWarn>
+    <Product>Zoning Envelope</Product>
+    <Company>Ethan Huang</Company>
+    <Description>Zoning code to buildable envelope, live in Rhino.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RhinoCommon" Version="8.21.25188.17001" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="codes\*.json" LogicalName="codes.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

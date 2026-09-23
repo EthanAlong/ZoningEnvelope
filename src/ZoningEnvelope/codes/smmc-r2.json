@@ -1,0 +1,33 @@
+{
+  "id": "smmc-r2",
+  "kind": "zone",
+  "jurisdiction": "Santa Monica (SMMC)",
+  "name": "R2 Low Density Residential",
+  "source": "SMMC 9.08.030 Table; 9.21 (daylight plane, R1 boundary setbacks); City Housing Element 2021-2029 Appendix E Figure E-2",
+  "verified": "2026-09-23 setbacks, height and coverage from the City Housing Element table; daylight plane and R1-boundary setbacks from code excerpts; confirm the side stepback wording ('2 ft average at each story') in the current code",
+  "notes": [
+    "Front setback: 20 ft (or per Official Districting Map).",
+    "Side setbacks: parcels 50 ft or wider: 8 ft; narrower parcels: 16% of parcel width, min 4 ft.",
+    "Rear setback: 15 ft.",
+    "Height: 2 stories / 30 ft (100% affordable projects: no story limit / 30 ft).",
+    "Parcel coverage: ground floor 45%; upper stories 90% of the allowable ground-floor coverage (upper-story figure not modeled).",
+    "Daylight plane: above 23 ft nothing may cross a plane starting 23 ft above the front setback line and rising at 45 degrees toward the rear.",
+    "Upper-story side stepback: an additional 2 ft average side stepback at each story above the ground floor. Modeled as a flat 2 ft on stories 2+ (approximation of an average).",
+    "Edges abutting an R1 district: 10 ft interior side setback, 20 ft rear setback. Flag those edges as 'adjacent low density'.",
+    "Density: 1 unit per 2,000 sf of parcel (or 4 units, whichever is less) not modeled."
+  ],
+  "setbacks": {
+    "front": { "feet": 20 },
+    "side":  { "feet": 8, "narrowLot": { "widthLessThanFeet": 50, "percentOfLotWidth": 16, "minFeet": 4 } },
+    "rear":  { "feet": 15 }
+  },
+  "height": { "maxFeet": 30, "maxStories": 2, "storyHeightFeet": 11 },
+  "coverage": { "maxPercent": 45 },
+  "stepbacks": [
+    { "sides": [ "side" ], "aboveStory": 1, "additionalFeet": 2, "label": "Upper-story side stepback (2 ft average)" }
+  ],
+  "planes": [
+    { "sides": [ "front" ], "startHeightFeet": 23, "angleDegrees": 45, "from": "setbackLine", "label": "Daylight plane (23 ft, 45 deg)" }
+  ],
+  "adjacentLowDensitySetbacks": { "sideFeet": 10, "rearFeet": 20, "label": "Setback from R1 district boundary" }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "lamc-c2-1vl",
+  "kind": "zone",
+  "jurisdiction": "Los Angeles (LAMC)",
+  "name": "C2 Commercial, Height District 1VL (with Transitional Height)",
+  "source": "LAMC 12.14 (C2 yards); 12.21.1 A.1 (1VL: 3 stories / 45 ft, FAR 1.5:1); 12.21.1 A.10 (Transitional Height)",
+  "verified": "2026-09-23 transitional height table (0-49 ft: 25 ft, 50-99 ft: 33 ft, 100-199 ft: 61 ft) confirmed; 1VL limits from CP-7150 summary; C2 yard rule (none for commercial use) re-confirm in 12.14 C",
+  "notes": [
+    "C2 commercial use: no front, side or rear yard required. Residential use in C2 follows R4 yards (not modeled).",
+    "Height District 1VL: 3 stories / 45 ft, FAR 1.5:1.",
+    "Transitional Height (12.21.1 A.10): where the lot is within 199 ft of a lot in RW1 or a more restrictive zone, portions of the building are limited by distance from that lot: 0-49 ft: 25 ft; 50-99 ft: 33 ft; 100-199 ft: 61 ft.",
+    "Flag the parcel edge that abuts the low-density lot as 'adjacent low density' for the transitional height to apply."
+  ],
+  "setbacks": {
+    "front": { "feet": 0 },
+    "side":  { "feet": 0 },
+    "rear":  { "feet": 0 }
+  },
+  "height": { "maxFeet": 45, "maxStories": 3, "storyHeightFeet": 14 },
+  "floorArea": { "ratio": 1.5, "label": "FAR" },
+  "transitionalHeight": {
+    "trigger": "adjacentLowDensity",
+    "steps": [
+      { "upToFeet": 50,  "maxHeightFeet": 25 },
+      { "upToFeet": 100, "maxHeightFeet": 33 },
+      { "upToFeet": 200, "maxHeightFeet": 61 }
+    ],
+    "label": "Transitional Height (12.21.1 A.10)"
+  }
+}

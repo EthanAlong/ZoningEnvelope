@@ -1,0 +1,24 @@
+{
+  "id": "lamc-r3-hd1",
+  "kind": "zone",
+  "jurisdiction": "Los Angeles (LAMC)",
+  "name": "R3 Multiple Dwelling, Height District 1",
+  "source": "LAMC 12.10 C (yards, lot area per unit); 12.21.1 A.1 (Height District 1: 3:1 FAR); CP-7150 Zoning Code Summary",
+  "verified": "2026-09-23 side/rear/lot-area confirmed from LAMC 12.10 text; 45 ft height for R3 in HD1 from CP-7150 summary; re-confirm front yard (15 ft) in 12.10 C.1",
+  "notes": [
+    "Front yard: 15 ft.",
+    "Side yard: 5 ft for buildings up to 2 stories; add 1 ft per story above the 2nd, max 16 ft.",
+    "Rear yard: 15 ft.",
+    "Height: 45 ft in Height District 1 for R3 (CP-7150). FAR 3:1 (HD1).",
+    "Density: 800 sf of lot area per dwelling unit.",
+    "Density bonus, TOC, and open space requirements not modeled."
+  ],
+  "setbacks": {
+    "front": { "feet": 15 },
+    "side":  { "feet": 5, "perStoryAboveStory": 2, "perStoryFeet": 1, "perStoryMaxFeet": 16 },
+    "rear":  { "feet": 15 }
+  },
+  "height": { "maxFeet": 45, "storyHeightFeet": 10 },
+  "floorArea": { "ratio": 3.0, "label": "FAR" },
+  "density": { "lotAreaPerUnitSqFt": 800 }
+}

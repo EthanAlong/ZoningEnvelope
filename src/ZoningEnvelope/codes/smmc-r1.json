@@ -1,0 +1,23 @@
+{
+  "id": "smmc-r1",
+  "kind": "zone",
+  "jurisdiction": "Santa Monica (SMMC)",
+  "name": "R1 Single-Unit Residential",
+  "source": "SMMC 9.07.030 Table (as amended Oct 2019); City Housing Element 2021-2029 Appendix E Figure E-2; City press release 2019-10-23",
+  "verified": "2026-09-23 from the City Housing Element table and press release; the current Table 9.07.030 text (ecode360) could not be fetched; confirm side setback aggregate rule and stepbacks before relying on it",
+  "notes": [
+    "Front setback: varies by street (Official Districting Map); 20 ft used as default.",
+    "Side setbacks: 10% of parcel width each side (table also allows a 30% aggregate split; not modeled).",
+    "Rear setback: 15 ft.",
+    "Height: 2 stories; 28 ft flat roof, 32 ft pitched roof (varies with parcel size).",
+    "Parcel coverage: 45% for new construction (55% for additions to existing homes).",
+    "Flat-roof vertical wall height limit of 23 ft, upper-story stepback areas (1% of parcel area each) and outdoor-space limits are NOT modeled geometrically. Check them by hand."
+  ],
+  "setbacks": {
+    "front": { "feet": 20 },
+    "side":  { "percentOfLotWidth": 10 },
+    "rear":  { "feet": 15 }
+  },
+  "height": { "maxFeet": 28, "pitchedRoofMaxFeet": 32, "maxStories": 2, "storyHeightFeet": 11 },
+  "coverage": { "maxPercent": 45 }
+}
