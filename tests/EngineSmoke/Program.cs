@@ -37,7 +37,19 @@ class Program
                 Console.WriteLine("loaded " + c.Id + "  (" + c.Kind + ")  " + c.Name);
             }
         }
-        Check(codes.Count == 6, "six rule sets embedded");
+        Check(codes.Count == 13, "13 rule sets embedded (12 zones + 1 openings table)");
+        Check(codes.Values.Count(c => c.Kind == "zone") == 12, "12 zone rule sets");
+        Check(codes.Values.All(c => !string.IsNullOrWhiteSpace(c.Source) && !string.IsNullOrWhiteSpace(c.Verified)), "every rule set carries source + verified");
+
+        Console.WriteLine("\nLAMC R4: unlimited height, rear yard per story");
+        var r4 = codes["lamc-r4-hd1"];
+        Check(r4.Height.IsUnlimited && Near(r4.Height.Effective(false), 150), "no limit -> drawn to 150 ft");
+        Check(Near(r4.Setbacks.Rear.Resolve(50, 150, 3), 15) && Near(r4.Setbacks.Rear.Resolve(50, 150, 5), 17) && Near(r4.Setbacks.Rear.Resolve(50, 150, 12), 20), "rear 15 -> +1/story above 3rd, cap 20");
+
+        Console.WriteLine("\nSanta Monica R3 density cap");
+        var smr3 = codes["smmc-r3"];
+        Check(Near(smr3.Density.MaxUnitsFor(6000), 4) && Near(smr3.Density.MaxUnitsFor(12000), 5), "6,000 sf -> 4 units; 12,000 sf -> capped at 5");
+        Check(smr3.Stepbacks.Count == 2 && smr3.Stepbacks.Any(s => s.AppliesTo(EdgeRole.Front) && s.AboveStory == 2), "front stepback above story 2");
 
         Console.WriteLine("\nLAMC R1 on a 50 x 150 lot");
         var r1 = codes["lamc-r1-hd1"];

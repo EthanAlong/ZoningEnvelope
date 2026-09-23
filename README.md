@@ -22,10 +22,11 @@ before relying on them. See `docs/CODE-NOTES.md`.
 4. Move or edit the parcel, the massing, or the rule JSON; everything recomputes
    on the next idle tick.
 
-The panel has three regions: the rule table (what the code says, what it means
-for this lot), the compliance table, and a 2D plan diagram of the parcel with
-setbacks and story footprints. The 3D envelope is drawn in Rhino's own viewport
-rather than a second 3D pane.
+The panel has a header (parcel, massing, rule set, options) and four tabs:
+Rules (what the code says, what it means for this lot), Check (compliance and
+opening limits per facade), Plan (2D diagram of the parcel with setbacks and
+story footprints) and Notes (sources, what is not modeled, rules applied). The
+3D envelope is drawn in Rhino's own viewport rather than a second 3D pane.
 
 ## Commands
 
@@ -47,10 +48,17 @@ transitional height (LA) or the R1-boundary setbacks (Santa Monica).
 | id | Jurisdiction | Highlights |
 | --- | --- | --- |
 | `lamc-r1-hd1` | Los Angeles R1 | 20% depth front, narrow-lot side rule, 28/33 ft, 45 deg encroachment plane at 20 ft, RFA 0.45 |
+| `lamc-r2-hd1` | Los Angeles R2 | R1 yards, 33 ft, FAR 3, 2,500 sf per unit |
+| `lamc-rd1.5-hd1` | Los Angeles RD1.5 | 15 ft front, side grows per story, 45 ft, 1,500 sf per unit |
+| `lamc-rd2-hd1` | Los Angeles RD2 | as RD1.5 with 2,000 sf per unit |
 | `lamc-r3-hd1` | Los Angeles R3 | side yard grows 1 ft per story above the 2nd, 45 ft, FAR 3, 800 sf per unit |
+| `lamc-r3-1xl` | Los Angeles R3 1XL | same yards, 2 stories / 30 ft |
+| `lamc-r4-hd1` | Los Angeles R4 | rear yard grows above the 3rd story, no height limit (drawn to 150 ft), FAR 3, 400 sf per unit |
 | `lamc-c2-1vl` | Los Angeles C2 1VL | no yards, 3 stories / 45 ft, FAR 1.5, transitional height 25 / 33 / 61 ft |
 | `smmc-r1` | Santa Monica R1 | 10% width side, 28/32 ft, 45% coverage |
 | `smmc-r2` | Santa Monica R2 | 8 ft or 16% side, 30 ft, 23 ft / 45 deg daylight plane, 2 ft upper-story side stepback, R1-boundary setbacks |
+| `smmc-r3` | Santa Monica R3 | 3 stories / 40 ft, 35 ft daylight plane, 10 ft front stepback above the 2nd story, 50% coverage, 1,500 sf per unit (max 5) |
+| `smmc-r4` | Santa Monica R4 | 4 stories / 45 ft, 40 ft daylight plane, same stepbacks, 1,250 sf per unit (max 6) |
 | `cbc-2022-705-8` | CBC 2022 | max exterior wall openings by fire separation distance |
 
 ## Adding or editing a rule set
@@ -74,10 +82,10 @@ Schema (all lengths in feet):
                "perStoryAboveStory": 2, "perStoryFeet": 1, "perStoryMaxFeet": 16 },
     "rear":  { "feet": 15 }
   },
-  "height": { "maxFeet": 45, "pitchedRoofMaxFeet": 0, "maxStories": 0, "storyHeightFeet": 10 },
+  "height": { "maxFeet": 45, "pitchedRoofMaxFeet": 0, "maxStories": 0, "storyHeightFeet": 10, "displayCapFeet": 150 },
   "floorArea": { "ratio": 3.0, "label": "FAR" },
   "coverage": { "maxPercent": 45 },
-  "density": { "lotAreaPerUnitSqFt": 800 },
+  "density": { "lotAreaPerUnitSqFt": 800, "maxUnits": 0 },
   "stepbacks": [ { "sides": ["side"], "aboveStory": 1, "additionalFeet": 2, "label": "..." } ],
   "planes": [ { "sides": ["front","side"], "startHeightFeet": 20, "angleDegrees": 45, "from": "setbackLine", "label": "..." } ],
   "transitionalHeight": { "trigger": "adjacentLowDensity",
@@ -88,7 +96,8 @@ Schema (all lengths in feet):
 
 Setback resolution: base `feet`, then the larger of any percent rules, then the
 narrow-lot override, then min/max, then per-story growth. Stepbacks add on top
-for stories above `aboveStory`.
+for stories above `aboveStory`. `maxFeet: 0` on height means no limit; the
+envelope is drawn to `displayCapFeet`.
 
 ## How the envelope is built
 
@@ -116,10 +125,12 @@ Requires Rhino 8 (runs on .NET 8) and the .NET 8+ SDK.
 powershell -ExecutionPolicy Bypass -File scripts\install-local.ps1
 ```
 
-This builds `src\ZoningEnvelope\bin\Release\net8.0-windows\ZoningEnvelope.rhp`
-and copies it to `%APPDATA%\McNeel\Rhinoceros\packages\8.0\ZoningEnvelope\<version>\`,
-where Rhino registers it at startup. If Rhino does not pick it up, drag the
-`.rhp` onto the Rhino window once.
+This builds to `dist\ZoningEnvelope.rhp`, copies it to
+`%APPDATA%\McNeel\Rhinoceros\packages\8.0\ZoningEnvelope\<version>\`, and writes
+the same registry entry the PlugInManager writes (load at startup). Close Rhino
+before running it when the plugin is already loaded; the `.rhp` is locked while
+loaded. Dragging the `.rhp` onto the Rhino window also works, but registers it
+as load-on-demand.
 
 Engine smoke test (no Rhino needed):
 

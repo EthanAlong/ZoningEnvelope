@@ -5,3 +5,4 @@ obj/
 .vs/
 *.rhp.bak
 *.log
+dist/

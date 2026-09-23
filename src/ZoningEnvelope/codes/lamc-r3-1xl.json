@@ -1,0 +1,21 @@
+{
+  "id": "lamc-r3-1xl",
+  "kind": "zone",
+  "jurisdiction": "Los Angeles (LAMC)",
+  "name": "R3 Multiple Dwelling, Height District 1XL",
+  "source": "LAMC 12.10 C (yards, lot area per unit); 12.21.1 A.1 (1XL: 2 stories / 30 ft)",
+  "verified": "2026-09-23 yards and 800 sf/unit confirmed from 12.10 text; 1XL = 2 stories / 30 ft from CP-7150 summary; FAR for R zones in 1XL not modeled (density governs)",
+  "notes": [
+    "Same yards as R3 in HD1: front 15 ft, side 5 ft (+1 ft per story above the 2nd, max 16 ft), rear 15 ft.",
+    "Height District 1XL: 2 stories / 30 ft.",
+    "Density: 800 sf of lot area per dwelling unit.",
+    "Floor area ratio in 1XL is not applied to residential zones here; confirm 12.21.1 A.1 for the specific lot."
+  ],
+  "setbacks": {
+    "front": { "feet": 15 },
+    "side":  { "feet": 5, "perStoryAboveStory": 2, "perStoryFeet": 1, "perStoryMaxFeet": 16 },
+    "rear":  { "feet": 15 }
+  },
+  "height": { "maxFeet": 30, "maxStories": 2, "storyHeightFeet": 10 },
+  "density": { "lotAreaPerUnitSqFt": 800 }
+}

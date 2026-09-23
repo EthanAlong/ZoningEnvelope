@@ -106,6 +106,9 @@ namespace ZoningEnvelope.Model
                 code.Setbacks.Rear = code.Setbacks.Rear ?? new SetbackRule();
                 code.Height = code.Height ?? new HeightRule { MaxFeet = 30 };
                 if (code.Height.StoryHeightFeet <= 0) code.Height.StoryHeightFeet = 10;
+                code.Stepbacks = code.Stepbacks ?? new List<StepbackRule>();
+                code.Planes = code.Planes ?? new List<PlaneRule>();
+                code.Notes = code.Notes ?? new List<string>();
             }
             return code;
         }

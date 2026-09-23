@@ -112,8 +112,10 @@ namespace ZoningEnvelope.Engine
             }
 
             r.AppliedRules.Add(DescribeSetbacks(code, r));
-            r.AppliedRules.Add("Height " + H + " ft" + (setup.PitchedRoof && code.Height.PitchedRoofMaxFeet > 0 ? " (pitched roof)" : "") +
-                               (code.Height.MaxStories > 0 ? ", max " + code.Height.MaxStories + " stories" : ""));
+            r.AppliedRules.Add(code.Height.IsUnlimited
+                ? "No height limit in this rule set; envelope drawn to " + H + " ft"
+                : "Height " + H + " ft" + (setup.PitchedRoof && code.Height.PitchedRoofMaxFeet > 0 ? " (pitched roof)" : "") +
+                  (code.Height.MaxStories > 0 ? ", max " + code.Height.MaxStories + " stories" : ""));
 
             // ---- cutters ----
             double big = Math.Max(parcel.BoundingBox.Diagonal.Length * 20, H * ftToModel * 20);

@@ -1,0 +1,36 @@
+{
+  "id": "smmc-r3",
+  "kind": "zone",
+  "jurisdiction": "Santa Monica (SMMC)",
+  "name": "R3 Medium Density Residential",
+  "source": "SMMC 9.08.030 Table and standards; City Housing Element 2021-2029 Appendix E Figure E-2",
+  "verified": "2026-09-23 40 ft height, 35 ft daylight plane, upper-story front stepback and side stepback from 9.08.030 excerpts; setbacks, coverage and density from the City Housing Element table",
+  "notes": [
+    "Front setback: 20 ft (or per Official Districting Map).",
+    "Side setbacks: parcels 50 ft or wider: 8 ft; narrower parcels: 16% of parcel width, min 4 ft.",
+    "Rear setback: 15 ft.",
+    "Height: 3 stories / 40 ft (100% affordable: no story limit / 40 ft).",
+    "Parcel coverage: ground floor 50%; upper stories 90% of the allowable ground-floor coverage (upper-story figure not modeled).",
+    "Daylight plane: above 35 ft nothing may cross a plane starting 35 ft above the front setback line and rising at 45 degrees toward the rear.",
+    "Upper-story front stepback: covered portions above the 2nd story set back an average of 10 ft from the 2nd-floor front facade. Modeled as a flat 10 ft on stories 3+.",
+    "Upper-story side stepback: an additional 2 ft average at each story. Modeled as a flat 2 ft on stories 2+.",
+    "Edges abutting an R1 district: 10 ft interior side setback, 20 ft rear setback (flag the edge as 'adjacent low density').",
+    "Density: 1 unit per 1,500 sf of parcel or 5 units, whichever is less (Tier 1)."
+  ],
+  "setbacks": {
+    "front": { "feet": 20 },
+    "side":  { "feet": 8, "narrowLot": { "widthLessThanFeet": 50, "percentOfLotWidth": 16, "minFeet": 4 } },
+    "rear":  { "feet": 15 }
+  },
+  "height": { "maxFeet": 40, "maxStories": 3, "storyHeightFeet": 11 },
+  "coverage": { "maxPercent": 50 },
+  "density": { "lotAreaPerUnitSqFt": 1500, "maxUnits": 5 },
+  "stepbacks": [
+    { "sides": [ "side" ], "aboveStory": 1, "additionalFeet": 2, "label": "Upper-story side stepback (2 ft average)" },
+    { "sides": [ "front" ], "aboveStory": 2, "additionalFeet": 10, "label": "Upper-story front stepback (10 ft average)" }
+  ],
+  "planes": [
+    { "sides": [ "front" ], "startHeightFeet": 35, "angleDegrees": 45, "from": "setbackLine", "label": "Daylight plane (35 ft, 45 deg)" }
+  ],
+  "adjacentLowDensitySetbacks": { "sideFeet": 10, "rearFeet": 20, "label": "Setback from R1 district boundary" }
+}

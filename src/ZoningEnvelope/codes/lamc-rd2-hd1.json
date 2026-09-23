@@ -1,0 +1,23 @@
+{
+  "id": "lamc-rd2-hd1",
+  "kind": "zone",
+  "jurisdiction": "Los Angeles (LAMC)",
+  "name": "RD2 Restricted Density, Height District 1",
+  "source": "LAMC 12.09.1 C (yards, lot area per unit); 12.21.1 A.1 (RD zones 45 ft in HD1, FAR 3:1); CP-7150 summary",
+  "verified": "2026-09-23 yards confirmed from 12.09.1 text; 2,000 sf/unit confirmed (12.09.1 minimum density text); 45 ft from CP-7150 summary",
+  "notes": [
+    "Front yard: 15 ft.",
+    "Side yard: 5 ft (lots under 50 ft wide: 10% of width, min 3 ft); +1 ft per story above the 2nd, max 16 ft.",
+    "Rear yard: 15 ft.",
+    "Density: 2,000 sf of lot area per dwelling unit.",
+    "Height: 45 ft in Height District 1. FAR 3:1 in HD1."
+  ],
+  "setbacks": {
+    "front": { "feet": 15 },
+    "side":  { "feet": 5, "narrowLot": { "widthLessThanFeet": 50, "percentOfLotWidth": 10, "minFeet": 3 }, "perStoryAboveStory": 2, "perStoryFeet": 1, "perStoryMaxFeet": 16 },
+    "rear":  { "feet": 15 }
+  },
+  "height": { "maxFeet": 45, "storyHeightFeet": 10 },
+  "floorArea": { "ratio": 3.0, "label": "FAR" },
+  "density": { "lotAreaPerUnitSqFt": 2000 }
+}

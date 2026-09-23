@@ -33,6 +33,42 @@ in Coastal Zone per 12.21.1), side wall plane break, RFA garage exemption and
 | FAR | 3:1 | confirmed (HD1 definition) | LAMC 12.21.1 A.1 |
 | Density | 800 sf lot area per unit | confirmed | LAMC 12.10 C.4 |
 
+### `lamc-r2-hd1` R2 Two-Family, Height District 1
+
+| Rule | Value used | Status | Source |
+| --- | --- | --- | --- |
+| Yards | same as R1 (12.08 C.1-C.3) | confirmed (12.09 cross-references R1) | LAMC 12.09 C |
+| Height | 33 ft | confirmed (12.21.1 text) | LAMC 12.21.1 A.1 |
+| FAR | 3:1 | confirmed (HD1) | LAMC 12.21.1 A.1 |
+| Density | 2,500 sf per unit | confirmed | LAMC 12.09 C.4 |
+
+### `lamc-rd1.5-hd1` / `lamc-rd2-hd1` RD Restricted Density, Height District 1
+
+| Rule | Value used | Status | Source |
+| --- | --- | --- | --- |
+| Front yard | 15 ft | confirmed (12.09.1 text) | LAMC 12.09.1 C.1 |
+| Side yard | 5 ft; lots < 50 ft: 10% width min 3 ft; +1 ft per story above the 2nd, max 16 ft | confirmed | LAMC 12.09.1 C.2 |
+| Rear yard | 15 ft | confirmed | LAMC 12.09.1 C.3 |
+| Height | 45 ft | secondary (CP-7150) | LAMC 12.21.1 A.1 |
+| Density | RD1.5: 1,500 sf per unit; RD2: 2,000 sf per unit | confirmed (zone suffix; 12.09.1 minimum-density text for RD2) | LAMC 12.09.1 C.4 |
+
+### `lamc-r3-1xl` R3, Height District 1XL
+
+Same yards and density as `lamc-r3-hd1`; height 2 stories / 30 ft from the
+CP-7150 height-district table (secondary). FAR omitted (density governs in
+residential 1XL; confirm 12.21.1 A.1 for the lot).
+
+### `lamc-r4-hd1` R4 Multiple Dwelling, Height District 1
+
+| Rule | Value used | Status | Source |
+| --- | --- | --- | --- |
+| Front yard | 15 ft | secondary (R3 pattern) | LAMC 12.11 C.1 |
+| Side yard | 5 ft, +1 ft per story above the 2nd, max 16 ft | secondary (R3 pattern) | LAMC 12.11 C.2 |
+| Rear yard | 15 ft, +1 ft per story above the 3rd, need not exceed 20 ft | confirmed (12.11 text) | LAMC 12.11 C.3 |
+| Height | no limit in HD1; drawn to 150 ft | secondary (CP-7150) | LAMC 12.21.1 A.1 |
+| FAR | 3:1 | confirmed (HD1) | LAMC 12.21.1 A.1 |
+| Density | 400 sf per unit | confirmed | LAMC 12.11 C.4 |
+
 ### `lamc-c2-1vl` C2 Commercial, Height District 1VL
 
 | Rule | Value used | Status | Source |
@@ -82,6 +118,24 @@ Single-Unit Dwellings" (2019-10-23).
 Not modeled: upper-story coverage (90% of allowable ground floor), 100%
 affordable height bonus, density (2,000 sf per unit or 4 units), outdoor living
 area.
+
+### `smmc-r3` R3 Medium Density / `smmc-r4` R4 High Density
+
+| Rule | R3 | R4 | Status | Source |
+| --- | --- | --- | --- | --- |
+| Front / side / rear | 20 ft / 8 ft (16% min 4 ft under 50 ft) / 15 ft | same | official table | Table 9.08.030 |
+| Height | 3 stories / 40 ft | 4 stories / 45 ft | 40 and 45 ft confirmed from 9.08.030 text; stories from the City table | 9.08.030 |
+| Daylight plane | 35 ft at front setback line, 45 deg | 40 ft at front setback line, 45 deg | confirmed from 9.08.030 text | 9.08.030 |
+| Front stepback | above the 2nd story: average 10 ft from the 2nd-floor front facade | same | confirmed from 9.08.030 text; modeled as flat 10 ft | 9.08.030 |
+| Side stepback | additional 2 ft average per story | same | confirmed; modeled as flat 2 ft on stories 2+ | 9.08.030 |
+| Coverage | ground 50%, upper 90% of allowable ground | ground 50%; 80/60/50% on stories 2/3/4 | official table; upper stories not modeled | Table 9.08.030 |
+| Density | 1,500 sf per unit or 5 units | 1,250 sf per unit or 6 units | official table (Tier 1) | Table 9.08.030 |
+| R1 boundary | 10 ft interior side, 20 ft rear | same | code excerpt | SMMC 9.21 |
+
+Source: City of Santa Monica Housing Element 2021-2029 Appendix E Figure E-2
+and the 9.08.030 standards text quoted in search results. Commercial districts
+(MUBL, MUB, GC, NC) were not added: the City table could be read for FAR and
+height but not reliably for setbacks and stepbacks.
 
 ## California Building Code 2022, Table 705.8
 

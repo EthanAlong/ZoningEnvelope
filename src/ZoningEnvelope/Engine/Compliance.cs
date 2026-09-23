@@ -70,7 +70,7 @@ namespace ZoningEnvelope.Engine
                 if (code.Coverage != null && code.Coverage.MaxPercent > 0)
                     c.AllowedCoverageSqFt = code.Coverage.MaxPercent / 100.0 * env.LotAreaSqFt;
                 if (code.Density != null && code.Density.LotAreaPerUnitSqFt > 0)
-                    c.MaxUnits = Math.Floor(env.LotAreaSqFt / code.Density.LotAreaPerUnitSqFt);
+                    c.MaxUnits = code.Density.MaxUnitsFor(env.LotAreaSqFt);
             }
             if (massing == null) return c;
             c.HasMassing = true;

@@ -141,6 +141,7 @@ namespace ZoningEnvelope.Model
 
     public class HeightRule
     {
+        /// <summary>0 = no height limit (the envelope is drawn to DisplayCapFeet).</summary>
         public double MaxFeet { get; set; }
         /// <summary>Alternative limit when the roof is pitched (0 = same as MaxFeet).</summary>
         public double PitchedRoofMaxFeet { get; set; }
@@ -148,11 +149,16 @@ namespace ZoningEnvelope.Model
         public int MaxStories { get; set; }
         /// <summary>Assumed floor-to-floor for story slabs and floor-area estimates.</summary>
         public double StoryHeightFeet { get; set; } = 10;
+        /// <summary>Height used for drawing when there is no limit.</summary>
+        public double DisplayCapFeet { get; set; } = 150;
+
+        [JsonIgnore] public bool IsUnlimited => MaxFeet <= 0 && PitchedRoofMaxFeet <= 0;
 
         public double Effective(bool pitchedRoof)
         {
+            if (IsUnlimited) return DisplayCapFeet > 0 ? DisplayCapFeet : 150;
             if (pitchedRoof && PitchedRoofMaxFeet > 0) return PitchedRoofMaxFeet;
-            return MaxFeet;
+            return MaxFeet > 0 ? MaxFeet : PitchedRoofMaxFeet;
         }
     }
 
@@ -171,6 +177,23 @@ namespace ZoningEnvelope.Model
     public class DensityRule
     {
         public double LotAreaPerUnitSqFt { get; set; }
+        /// <summary>Optional cap: "or N units, whichever is less". 0 = no cap.</summary>
+        public int MaxUnits { get; set; }
+
+        public double MaxUnitsFor(double lotAreaSqFt)
+        {
+            if (LotAreaPerUnitSqFt <= 0) return 0;
+            double n = Math.Floor(lotAreaSqFt / LotAreaPerUnitSqFt);
+            if (MaxUnits > 0) n = Math.Min(n, MaxUnits);
+            return n;
+        }
+
+        public string Describe()
+        {
+            string s = "1 unit per " + LotAreaPerUnitSqFt.ToString("#,0") + " sf of lot";
+            if (MaxUnits > 0) s += ", max " + MaxUnits + " units";
+            return s;
+        }
     }
 
     public class StepbackRule
