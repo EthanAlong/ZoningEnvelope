@@ -29,7 +29,9 @@ namespace ZoningEnvelope.Engine
         public double AllowedCoverageSqFt;       // 0 = no rule
         public double MaxUnits;                  // 0 = no rule
         public double MassingVolumeCuFt;
-        public double? ExcessVolumeCuFt;         // null = boolean failed
+        public double? ExcessVolumeCuFt;         // null = could not be measured
+        public bool ExcessApproximate;           // true = point-sampling estimate
+        public int MassingCount;
         public List<Brep> ExcessBreps { get; } = new List<Brep>();
         public List<EdgeOpenings> Openings { get; } = new List<EdgeOpenings>();
         public List<List<Point3d>> FootprintOutlines { get; } = new List<List<Point3d>>();
@@ -55,12 +57,12 @@ namespace ZoningEnvelope.Engine
         }
 
         public static ComplianceResult Evaluate(ParcelGeometry parcel, ParcelSetup setup, ZoneCode code, ZoneCode openings,
-                                                EnvelopeResult env, Brep massing, double ftToModel, double tol)
+                                                EnvelopeResult env, List<Brep> massings, double ftToModel, double tol)
         {
             var c = new ComplianceResult();
             double m2f = 1.0 / ftToModel;
             c.MaxHeightFeet = env?.HeightFeet ?? 0;
-            if (code != null)
+            if (code != null && env != null)
             {
                 if (code.FloorArea != null && code.FloorArea.Ratio > 0)
                 {
@@ -72,14 +74,19 @@ namespace ZoningEnvelope.Engine
                 if (code.Density != null && code.Density.LotAreaPerUnitSqFt > 0)
                     c.MaxUnits = code.Density.MaxUnitsFor(env.LotAreaSqFt);
             }
-            if (massing == null) return c;
+            if (massings == null || massings.Count == 0) return c;
             c.HasMassing = true;
+            c.MassingCount = massings.Count;
 
-            var bb = massing.GetBoundingBox(true);
+            var bb = BoundingBox.Empty;
+            foreach (var m in massings) bb.Union(m.GetBoundingBox(true));
             c.HeightFeet = (bb.Max.Z - parcel.Grade) * m2f;
 
-            var vm = VolumeMassProperties.Compute(massing);
-            if (vm != null) c.MassingVolumeCuFt = vm.Volume * m2f * m2f * m2f;
+            foreach (var m in massings)
+            {
+                var vm = VolumeMassProperties.Compute(m);
+                if (vm != null) c.MassingVolumeCuFt += vm.Volume * m2f * m2f * m2f;
+            }
 
             // floor plates: horizontal sections every story height, 0.5 ft above each floor
             double sh = (code?.Height?.StoryHeightFeet ?? 10) * ftToModel;
@@ -87,7 +94,8 @@ namespace ZoningEnvelope.Engine
             bool first = true;
             while (z < bb.Max.Z)
             {
-                double a = SectionArea(massing, z, first ? c.FootprintOutlines : null);
+                double a = 0;
+                foreach (var m in massings) a += SectionArea(m, z, first ? c.FootprintOutlines : null);
                 if (first) { c.FootprintSqFt = a * m2f * m2f; first = false; }
                 c.GrossFloorAreaSqFt += a * m2f * m2f;
                 z += sh;
@@ -96,29 +104,106 @@ namespace ZoningEnvelope.Engine
             // volume outside the envelope
             if (env != null && env.Breps.Count > 0)
             {
-                try
+                double total = 0; bool anyApprox = false, failed = false;
+                foreach (var m in massings)
                 {
-                    var diff = Brep.CreateBooleanDifference(new[] { massing }, env.Breps, tol);
-                    if (diff == null) { c.ExcessVolumeCuFt = null; c.Warnings.Add("Could not compute the volume outside the envelope (boolean failed)."); }
-                    else
-                    {
-                        double v = 0;
-                        foreach (var d in diff)
-                        {
-                            var p = VolumeMassProperties.Compute(d);
-                            if (p != null && p.Volume > tol) { v += p.Volume; c.ExcessBreps.Add(d); }
-                        }
-                        c.ExcessVolumeCuFt = v * m2f * m2f * m2f;
-                    }
+                    bool approx;
+                    var v = ExcessVolume(m, env.Breps, tol, c.ExcessBreps, out approx);
+                    if (!v.HasValue) { failed = true; break; }
+                    total += v.Value;
+                    anyApprox |= approx;
                 }
-                catch (Exception ex) { c.ExcessVolumeCuFt = null; c.Warnings.Add("Envelope check failed: " + ex.Message); }
+                if (failed)
+                {
+                    c.ExcessVolumeCuFt = null;
+                    c.Warnings.Add("Could not measure the volume outside the envelope for this massing (boolean and sampling both failed). Make sure the massing is a closed solid.");
+                }
+                else
+                {
+                    c.ExcessVolumeCuFt = total * m2f * m2f * m2f;
+                    c.ExcessApproximate = anyApprox;
+                    if (anyApprox) c.Warnings.Add("Volume outside the envelope is estimated by point sampling (exact boolean failed, usually because massing faces sit exactly on envelope faces).");
+                }
             }
 
             // openings per parcel edge (CBC 705.8 style table)
             if (openings != null && openings.Rows != null && openings.Rows.Count > 0)
-                EvaluateOpenings(parcel, setup, openings, massing, ftToModel, c);
+                EvaluateOpenings(parcel, setup, openings, massings, ftToModel, c);
 
             return c;
+        }
+
+        /// <summary>
+        /// Volume of <paramref name="massing"/> outside the envelope, in model units.
+        /// 1) exact boolean against an envelope enlarged by 0.01% (dodges coplanar faces),
+        /// 2) fallback: regular-grid point sampling against meshes, marked approximate.
+        /// </summary>
+        private static double? ExcessVolume(Brep massing, List<Brep> envelope, double tol, List<Brep> excessOut, out bool approximate)
+        {
+            approximate = false;
+            var enlarged = new List<Brep>();
+            foreach (var b in envelope)
+            {
+                var d = b.DuplicateBrep();
+                var bb = d.GetBoundingBox(true);
+                d.Transform(Transform.Scale(bb.Center, 1.0001));
+                enlarged.Add(d);
+            }
+            try
+            {
+                var diff = Brep.CreateBooleanDifference(new[] { massing }, enlarged, tol);
+                if (diff != null)
+                {
+                    double v = 0;
+                    foreach (var d in diff)
+                    {
+                        var p = VolumeMassProperties.Compute(d);
+                        if (p != null && p.Volume > tol) { v += p.Volume; excessOut.Add(d); }
+                    }
+                    return v;
+                }
+            }
+            catch { }
+
+            // sampling fallback
+            try
+            {
+                var mMesh = JoinedMesh(massing);
+                var eMesh = new Mesh();
+                foreach (var b in enlarged) { var jm = JoinedMesh(b); if (jm != null) eMesh.Append(jm); }
+                if (mMesh == null || eMesh.Vertices.Count == 0) return null;
+                var vmp = VolumeMassProperties.Compute(massing);
+                if (vmp == null || vmp.Volume <= 0) return null;
+
+                var bb = massing.GetBoundingBox(true);
+                double vol = bb.Volume;
+                if (vol <= 0) return null;
+                double step = Math.Pow(vol / 20000.0, 1.0 / 3.0);
+                long inside = 0, outside = 0;
+                for (double x = bb.Min.X + step / 2; x < bb.Max.X; x += step)
+                    for (double y = bb.Min.Y + step / 2; y < bb.Max.Y; y += step)
+                        for (double zz = bb.Min.Z + step / 2; zz < bb.Max.Z; zz += step)
+                        {
+                            var p = new Point3d(x, y, zz);
+                            if (!mMesh.IsPointInside(p, tol, false)) continue;
+                            inside++;
+                            if (!eMesh.IsPointInside(p, tol, false)) outside++;
+                        }
+                if (inside == 0) return null;
+                approximate = true;
+                return vmp.Volume * outside / (double)inside;
+            }
+            catch { return null; }
+        }
+
+        private static Mesh JoinedMesh(Brep b)
+        {
+            var parts = Mesh.CreateFromBrep(b, MeshingParameters.FastRenderMesh);
+            if (parts == null || parts.Length == 0) return null;
+            var m = new Mesh();
+            foreach (var p in parts) m.Append(p);
+            m.Weld(Math.PI);
+            return m;
         }
 
         private static double SectionArea(Brep brep, double z, List<List<Point3d>> outlines)
@@ -143,10 +228,11 @@ namespace ZoningEnvelope.Engine
             return a;
         }
 
-        private static void EvaluateOpenings(ParcelGeometry parcel, ParcelSetup setup, ZoneCode table, Brep massing, double ftToModel, ComplianceResult c)
+        private static void EvaluateOpenings(ParcelGeometry parcel, ParcelSetup setup, ZoneCode table, List<Brep> massings, double ftToModel, ComplianceResult c)
         {
             double m2f = 1.0 / ftToModel;
             var best = new Dictionary<int, EdgeOpenings>();
+            foreach (var massing in massings)
             foreach (var face in massing.Faces)
             {
                 var dom0 = face.Domain(0); var dom1 = face.Domain(1);

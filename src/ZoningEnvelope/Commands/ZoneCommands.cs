@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Rhino;
 using Rhino.Commands;
 using Rhino.DocObjects;
@@ -94,13 +95,17 @@ namespace ZoningEnvelope.Commands
             var s = ZoningSession.Current;
             if (s.ParcelId == Guid.Empty) { RhinoApp.WriteLine("Zoning Envelope: set a parcel first (ZoneSetParcel)."); return Result.Failure; }
             var go = new GetObject();
-            go.SetCommandPrompt("Select the massing (closed polysurface, extrusion, mesh or SubD)");
+            go.SetCommandPrompt("Select the massing solids (closed polysurfaces, extrusions, meshes or SubDs), Enter when done");
             go.GeometryFilter = ObjectType.Brep | ObjectType.Extrusion | ObjectType.Mesh | ObjectType.SubD;
             go.SubObjectSelect = false;
-            go.Get();
+            go.GroupSelect = true;
+            go.GetMultiple(1, 0);
             if (go.CommandResult() != Result.Success) return go.CommandResult();
-            s.SetMassing(doc, go.Object(0).ObjectId);
+            var ids = new List<Guid>();
+            for (int i = 0; i < go.ObjectCount; i++) ids.Add(go.Object(i).ObjectId);
+            s.SetMassing(doc, ids);
             doc.Objects.UnselectAll();
+            RhinoApp.WriteLine("Zoning Envelope: {0} massing object(s) linked.", ids.Count);
             return Result.Success;
         }
     }

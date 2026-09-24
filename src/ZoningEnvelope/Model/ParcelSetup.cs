@@ -32,7 +32,9 @@ namespace ZoningEnvelope.Model
 
         public string CodeId { get; set; }
         public List<EdgeSetup> Edges { get; set; } = new List<EdgeSetup>();
-        public Guid MassingId { get; set; } = Guid.Empty;
+        /// <summary>Linked massing objects (one or more closed solids).</summary>
+        public List<Guid> MassingIds { get; set; } = new List<Guid>();
+        public bool HasMassing => MassingIds.Count > 0;
         public bool Sprinklered { get; set; } = true;
         public bool PitchedRoof { get; set; }
 
@@ -48,8 +50,11 @@ namespace ZoningEnvelope.Model
                 try { s.Edges = JsonSerializer.Deserialize<List<EdgeSetup>>(edges, CodeLibrary.JsonOptions) ?? new List<EdgeSetup>(); }
                 catch { s.Edges = new List<EdgeSetup>(); }
             }
-            Guid g;
-            if (Guid.TryParse(a.GetUserString(KeyMassing), out g)) s.MassingId = g;
+            foreach (var part in (a.GetUserString(KeyMassing) ?? "").Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                Guid g;
+                if (Guid.TryParse(part, out g) && g != Guid.Empty) s.MassingIds.Add(g);
+            }
             s.Sprinklered = a.GetUserString(KeySprinklered) != "false";
             s.PitchedRoof = a.GetUserString(KeyPitched) == "true";
             return s;
@@ -61,7 +66,7 @@ namespace ZoningEnvelope.Model
             var a = obj.Attributes.Duplicate();
             a.SetUserString(KeyCode, CodeId ?? "");
             a.SetUserString(KeyEdges, JsonSerializer.Serialize(Edges, CodeLibrary.JsonOptions));
-            a.SetUserString(KeyMassing, MassingId == Guid.Empty ? "" : MassingId.ToString());
+            a.SetUserString(KeyMassing, string.Join(",", MassingIds));
             a.SetUserString(KeySprinklered, Sprinklered ? "true" : "false");
             a.SetUserString(KeyPitched, PitchedRoof ? "true" : "false");
             doc.Objects.ModifyAttributes(obj, a, true);

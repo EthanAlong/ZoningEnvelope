@@ -52,7 +52,7 @@ namespace ZoningEnvelope.UI
                 string Ok(bool ok) => !m ? "" : (ok ? "OK" : "OVER");
                 var rows = new List<string[]>();
                 rows.Add(new[] { "Height", Ui.Ft(env.HeightFeet), m ? Ui.Ft(c.HeightFeet) : "", Ok(c.HeightOk) });
-                rows.Add(new[] { "Envelope", "inside", m ? (c.ExcessVolumeCuFt.HasValue ? c.ExcessVolumeCuFt.Value.ToString("#,0") + " cf outside" : "n/a") : "", m && !c.ExcessVolumeCuFt.HasValue ? "?" : Ok(c.EnvelopeOk) });
+                rows.Add(new[] { "Envelope", "inside", m ? (c.ExcessVolumeCuFt.HasValue ? (c.ExcessApproximate ? "about " : "") + c.ExcessVolumeCuFt.Value.ToString("#,0") + " cf outside" : "n/a") : "", m && !c.ExcessVolumeCuFt.HasValue ? "?" : Ok(c.EnvelopeOk) });
                 if (c.AllowedFloorAreaSqFt > 0) rows.Add(new[] { c.FloorAreaLabel, Ui.Sf(c.AllowedFloorAreaSqFt), m ? Ui.Sf(c.GrossFloorAreaSqFt) : "", Ok(c.FloorAreaOk) });
                 else if (m) rows.Add(new[] { "Floor area", "no rule", Ui.Sf(c.GrossFloorAreaSqFt), "" });
                 if (c.AllowedCoverageSqFt > 0) rows.Add(new[] { "Coverage", Ui.Sf(c.AllowedCoverageSqFt), m ? Ui.Sf(c.FootprintSqFt) : "", Ok(c.CoverageOk) });

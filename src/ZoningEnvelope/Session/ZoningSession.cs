@@ -83,9 +83,9 @@ namespace ZoningEnvelope.Session
             _dirty = true;
         }
 
-        public void SetMassing(RhinoDoc doc, Guid id)
+        public void SetMassing(RhinoDoc doc, IEnumerable<Guid> ids)
         {
-            Setup.MassingId = id;
+            Setup.MassingIds = ids.Where(g => g != Guid.Empty).Distinct().ToList();
             Persist(doc);
             _dirty = true;
         }
@@ -183,20 +183,11 @@ namespace ZoningEnvelope.Session
             }
         }
 
-        private void OnReplace(object sender, RhinoReplaceObjectEventArgs e)
-        {
-            if (e.ObjectId == ParcelId || e.ObjectId == Setup.MassingId) _dirty = true;
-        }
+        private bool Tracked(Guid id) => id == ParcelId || Setup.MassingIds.Contains(id);
 
-        private void OnDelete(object sender, RhinoObjectEventArgs e)
-        {
-            if (e.ObjectId == ParcelId || e.ObjectId == Setup.MassingId) _dirty = true;
-        }
-
-        private void OnUndelete(object sender, RhinoObjectEventArgs e)
-        {
-            if (e.ObjectId == ParcelId || e.ObjectId == Setup.MassingId) _dirty = true;
-        }
+        private void OnReplace(object sender, RhinoReplaceObjectEventArgs e) { if (Tracked(e.ObjectId)) _dirty = true; }
+        private void OnDelete(object sender, RhinoObjectEventArgs e) { if (Tracked(e.ObjectId)) _dirty = true; }
+        private void OnUndelete(object sender, RhinoObjectEventArgs e) { if (Tracked(e.ObjectId)) _dirty = true; }
 
         private void OnIdle(object sender, EventArgs e)
         {
@@ -241,13 +232,15 @@ namespace ZoningEnvelope.Session
 
             Envelope = EnvelopeBuilder.Build(Parcel, Setup, Code, FeetToModel, tol);
 
-            Brep massing = null;
-            if (Setup.MassingId != Guid.Empty)
+            var massings = new List<Brep>();
+            foreach (var id in Setup.MassingIds)
             {
-                var mo = doc.Objects.FindId(Setup.MassingId);
-                if (mo != null && !mo.IsDeleted) massing = Engine.Compliance.ToBrep(mo);
+                var mo = doc.Objects.FindId(id);
+                if (mo == null || mo.IsDeleted) continue;
+                var b = Engine.Compliance.ToBrep(mo);
+                if (b != null) massings.Add(b);
             }
-            Compliance = Engine.Compliance.Evaluate(Parcel, Setup, Code, OpeningsTable, Envelope, massing, FeetToModel, tol);
+            Compliance = Engine.Compliance.Evaluate(Parcel, Setup, Code, OpeningsTable, Envelope, massings, FeetToModel, tol);
 
             _conduit.Update(Parcel, Setup, Envelope, Compliance, FeetToModel);
             doc.Views.Redraw();

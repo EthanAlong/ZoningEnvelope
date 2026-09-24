@@ -158,7 +158,8 @@ namespace ZoningEnvelope.UI
                 _parcelLabel.Text = s.Parcel == null
                     ? (s.ParcelError ?? "none")
                     : s.Parcel.EdgeCount + " edges, " + (env?.LotAreaSqFt ?? 0).ToString("#,0") + " sf, " + (env?.LotWidthFeet ?? 0).ToString("0") + " x " + (env?.LotDepthFeet ?? 0).ToString("0") + " ft";
-                _massingLabel.Text = s.Setup.MassingId == Guid.Empty ? "none" : (s.Compliance?.HasMassing == true ? "linked" : "missing");
+                _massingLabel.Text = !s.Setup.HasMassing ? "none"
+                    : (s.Compliance?.HasMassing == true ? (s.Compliance.MassingCount == 1 ? "1 object linked" : s.Compliance.MassingCount + " objects linked") : "missing");
 
                 _rulesHost.Content = Ui.Table(new[] { "Rule", "Code says", "Here" }, new[] { 130, 0, 110 }, BuildRules(s));
                 _notes.Text = BuildNotes(s);
