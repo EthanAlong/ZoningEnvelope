@@ -20,6 +20,32 @@ namespace ZoningEnvelope.Commands
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
             Panels.OpenPanel(ZoningPanel.PanelId);
+            Panels.OpenPanel(ZoningPlanPanel.PanelId);
+            Panels.OpenPanel(ZoningCheckPanel.PanelId);
+            return Result.Success;
+        }
+    }
+
+    [System.Runtime.InteropServices.Guid("1b2c3d4e-5f60-4a7b-8c9d-0e1f2a3b4c07")]
+    public class ZonePlanCommand : Command
+    {
+        public override string EnglishName => "ZonePlan";
+
+        protected override Result RunCommand(RhinoDoc doc, RunMode mode)
+        {
+            Panels.OpenPanel(ZoningPlanPanel.PanelId);
+            return Result.Success;
+        }
+    }
+
+    [System.Runtime.InteropServices.Guid("1b2c3d4e-5f60-4a7b-8c9d-0e1f2a3b4c08")]
+    public class ZoneCheckCommand : Command
+    {
+        public override string EnglishName => "ZoneCheck";
+
+        protected override Result RunCommand(RhinoDoc doc, RunMode mode)
+        {
+            Panels.OpenPanel(ZoningCheckPanel.PanelId);
             return Result.Success;
         }
     }

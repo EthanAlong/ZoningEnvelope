@@ -22,17 +22,17 @@ before relying on them. See `docs/CODE-NOTES.md`.
 4. Move or edit the parcel, the massing, or the rule JSON; everything recomputes
    on the next idle tick.
 
-The panel has a header (parcel, massing, rule set, options) and four tabs:
-Rules (what the code says, what it means for this lot), Check (compliance and
-opening limits per facade), Plan (2D diagram of the parcel with setbacks and
-story footprints) and Notes (sources, what is not modeled, rules applied). The
-3D envelope is drawn in Rhino's own viewport rather than a second 3D pane.
+Three dockable panels: **Zoning Envelope** (parcel, massing, rule set, options,
+the rule table and the notes: sources, what is not modeled, rules applied),
+**Zoning Plan** (2D diagram of the parcel with setbacks and story footprints)
+and **Zoning Check** (compliance and opening limits per facade). The 3D
+envelope is drawn in Rhino's own viewport rather than a second 3D pane.
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
-| `ZoneEnvelope` | Open the panel |
+| `ZoneEnvelope` | Open all three panels (`ZonePlan`, `ZoneCheck` open one each) |
 | `ZoneSetParcel` | Select the parcel curve, then click near the front edge |
 | `ZoneSetMassing` | Link a massing object to check |
 | `ZoneEdgeFlags` | Per edge: role (front / side / rear), street + street width, adjacent low-density lot |

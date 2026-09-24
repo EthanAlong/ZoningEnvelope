@@ -6,7 +6,7 @@
     <TargetExt>.rhp</TargetExt>
     <AssemblyName>ZoningEnvelope</AssemblyName>
     <RootNamespace>ZoningEnvelope</RootNamespace>
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>

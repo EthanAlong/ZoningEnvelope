@@ -26,8 +26,10 @@ namespace ZoningEnvelope
             try
             {
                 Panels.RegisterPanel(this, typeof(ZoningPanel), "Zoning Envelope", CreateIcon(), PanelType.System);
+                Panels.RegisterPanel(this, typeof(ZoningPlanPanel), "Zoning Plan", CreateIcon(), PanelType.System);
+                Panels.RegisterPanel(this, typeof(ZoningCheckPanel), "Zoning Check", CreateIcon(), PanelType.System);
                 ZoningSession.Current.Start();
-                RhinoApp.WriteLine("Zoning Envelope loaded. Commands: ZoneEnvelope, ZoneSetParcel, ZoneSetMassing, ZoneEdgeFlags, ZoneBake, ZoneReloadCodes.");
+                RhinoApp.WriteLine("Zoning Envelope loaded. Commands: ZoneEnvelope (all panels), ZonePlan, ZoneCheck, ZoneSetParcel, ZoneSetMassing, ZoneEdgeFlags, ZoneBake, ZoneReloadCodes.");
                 return LoadReturnCode.Success;
             }
             catch (Exception ex)
