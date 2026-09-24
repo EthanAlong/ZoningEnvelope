@@ -20,9 +20,8 @@ namespace ZoningEnvelope.Commands
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
+            // only the main panel; Plan and Check open from its button or via ZonePlan / ZoneCheck
             Panels.OpenPanel(ZoningPanel.PanelId);
-            Panels.OpenPanel(ZoningPlanPanel.PanelId);
-            Panels.OpenPanel(ZoningCheckPanel.PanelId);
             return Result.Success;
         }
     }

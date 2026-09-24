@@ -48,7 +48,11 @@ namespace ZoningEnvelope.UI
             var reload = Ui.Btn("Reload rules", () => ZoningSession.Current.ReloadLibrary());
             var edit = Ui.Btn("Edit JSON", EditCurrentCode);
             var folder = Ui.Btn("Rule folder", OpenFolder);
-            var panels = Ui.Btn("Plan + Check panels", () => RhinoApp.RunScript("_ZoneEnvelope", false));
+            var panels = Ui.Btn("Plan + Check panels", () =>
+            {
+                Rhino.UI.Panels.OpenPanel(ZoningPlanPanel.PanelId);
+                Rhino.UI.Panels.OpenPanel(ZoningCheckPanel.PanelId);
+            });
 
             _codes.SelectedValueChanged += (s, e) =>
             {
