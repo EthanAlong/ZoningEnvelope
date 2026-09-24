@@ -45,7 +45,8 @@ Set-ItemProperty -Path $key -Name "Name" -Value "ZoningEnvelope"
 Set-ItemProperty -Path $key -Name "EnglishName" -Value "ZoningEnvelope"
 Set-ItemProperty -Path $key -Name "Type" -Value 16 -Type DWord
 Set-ItemProperty -Path $key -Name "IsDotNETPlugIn" -Value 1 -Type DWord
-Set-ItemProperty -Path $key -Name "LoadMode" -Value 2 -Type DWord
+# LoadMode 1 = load when one of its commands is used (safer for Rhino's startup / layout than 2 = at startup)
+Set-ItemProperty -Path $key -Name "LoadMode" -Value 1 -Type DWord
 Set-ItemProperty -Path "$key\PlugIn" -Name "FileName" -Value $destRhp
 
 Write-Host ""
