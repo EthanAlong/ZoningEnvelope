@@ -34,6 +34,7 @@ namespace ZoningEnvelope.UI
 
         public ZoningPanel(uint documentSerialNumber)
         {
+            Size = new Size(480, 700);   // preferred size for the first (floating) appearance; no minimum
             Build();
             ZoningSession.Current.Updated += Refresh;
             Refresh();

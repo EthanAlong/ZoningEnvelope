@@ -15,6 +15,7 @@ namespace ZoningEnvelope.UI
 
         public ZoningPlanPanel(uint documentSerialNumber)
         {
+            Size = new Size(420, 420);
             Content = new TableLayout { Padding = 4, Rows = { new TableRow(_plan) { ScaleHeight = true } } };
             ZoningSession.Current.Updated += () => _plan.Invalidate();
         }

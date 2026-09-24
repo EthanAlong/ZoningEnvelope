@@ -33,74 +33,88 @@ namespace ZoningEnvelope.UI
             return b;
         }
 
-        public static Control Cell(string text, Font font, Color? bg, int width, Color? fg = null, WrapTable owner = null)
-        {
-            var l = new Label { Text = text ?? "", Font = font, Wrap = WrapMode.Word, VerticalAlignment = VerticalAlignment.Top };
-            if (fg.HasValue) l.TextColor = fg.Value;
-            if (width > 0) l.Width = width;
-            else { l.Width = 200; owner?.Register(l); }
-            var p = new Panel { Content = l, Padding = new Padding(6, 4) };
-            if (bg.HasValue) p.BackgroundColor = bg.Value;
-            return p;
-        }
-
         /// <summary>
-        /// A table whose "0-width" columns share the width left over by the fixed columns.
-        /// Their labels get an explicit width on every resize so they wrap instead of
-        /// pushing the table wider than the panel.
+        /// A table drawn in one Drawable: header row, striped rows, word-wrapped cells.
+        /// Columns with width 0 share whatever width the fixed columns leave.
+        /// Drawing is cheap, so resizing the panel does not trigger a WPF layout storm
+        /// (which is what a grid of wrapping Labels did).
         /// </summary>
-        public class WrapTable : TableLayout
+        public class TextTable : Drawable
         {
-            private readonly List<Label> _expand = new List<Label>();
-            private int _fixed;
-            private int _expandCount;
-            private int _last = -1;
+            private const int PadX = 6, PadY = 4;
+            private readonly string[] _headers;
+            private readonly int[] _widths;
+            private readonly List<string[]> _rows;
+            private readonly Func<int, int, Color?> _color;
+            private int _lastHeight = -1;
 
-            internal void Register(Label l) => _expand.Add(l);
-            internal void SetColumns(int[] widths)
+            public TextTable(string[] headers, int[] widths, List<string[]> rows, Func<int, int, Color?> color)
             {
-                _fixed = 0; _expandCount = 0;
-                foreach (var w in widths) { if (w > 0) _fixed += w + 12; else _expandCount++; }
-                _fixed += 12 * _expandCount;
+                _headers = headers; _widths = widths; _rows = rows ?? new List<string[]>(); _color = color;
+                Size = new Size(-1, 30);
             }
 
             protected override void OnSizeChanged(EventArgs e)
             {
                 base.OnSizeChanged(e);
-                Fit();
+                Invalidate();
             }
 
-            public void Fit()
+            protected override void OnPaint(PaintEventArgs e)
             {
-                if (_expandCount == 0 || Width <= 0) return;
-                int w = Math.Max(90, (Width - _fixed) / _expandCount);
-                if (w == _last) return;
-                _last = w;
-                foreach (var l in _expand) l.Width = w;
+                var g = e.Graphics;
+                int W = Width;
+                if (W <= 0) return;
+
+                int fixedSum = 0, nExpand = 0;
+                foreach (var w in _widths) { if (w > 0) fixedSum += w + 2 * PadX; else nExpand++; }
+                int expandW = nExpand > 0 ? Math.Max(60, (W - fixedSum) / nExpand - 2 * PadX) : 0;
+                int ColW(int i) => _widths[i] > 0 ? _widths[i] : expandW;
+
+                float y = 0;
+                var texts = new FormattedText[_headers.Length];
+                for (int r = -1; r < _rows.Count; r++)
+                {
+                    float rowH = 0;
+                    for (int i = 0; i < _headers.Length; i++)
+                    {
+                        string txt = r < 0 ? _headers[i] : (i < _rows[r].Length ? _rows[r][i] : "");
+                        Color fg = r < 0 ? Muted : (_color?.Invoke(r, i) ?? SystemColors.ControlText);
+                        var ft = new FormattedText
+                        {
+                            Text = txt ?? "",
+                            Font = r < 0 ? BodyBold : Body,
+                            Wrap = FormattedTextWrapMode.Word,
+                            MaximumSize = new SizeF(ColW(i), 100000),
+                            ForegroundBrush = new SolidBrush(fg),
+                        };
+                        texts[i] = ft;
+                        rowH = Math.Max(rowH, ft.Measure().Height);
+                    }
+                    rowH += 2 * PadY;
+                    if (r >= 0 && r % 2 == 0) g.FillRectangle(Stripe, new RectangleF(0, y, W, rowH));
+                    float x = 0;
+                    for (int i = 0; i < _headers.Length; i++)
+                    {
+                        g.DrawText(texts[i], new PointF(x + PadX, y + PadY));
+                        x += ColW(i) + 2 * PadX;
+                    }
+                    y += rowH;
+                    if (r < 0) g.DrawLine(Color.FromArgb(0, 0, 0, 40), 0, y, W, y);
+                }
+
+                int total = (int)Math.Ceiling(y) + 2;
+                if (Math.Abs(total - _lastHeight) > 1)
+                {
+                    _lastHeight = total;
+                    Size = new Size(-1, total);
+                }
             }
         }
 
         /// <param name="widths">pixel width per column; 0 = this column takes the remaining width.</param>
-        public static WrapTable Table(string[] headers, int[] widths, List<string[]> rows, Func<int, int, Color?> color = null)
-        {
-            var t = new WrapTable { Spacing = new Size(0, 0) };
-            t.SetColumns(widths);
-            var h = new List<TableCell>();
-            for (int i = 0; i < headers.Length; i++) h.Add(new TableCell(Cell(headers[i], BodyBold, null, widths[i], Muted, t), widths[i] == 0));
-            t.Rows.Add(new TableRow(h));
-            for (int r = 0; r < rows.Count; r++)
-            {
-                var cells = new List<TableCell>();
-                Color? bg = r % 2 == 0 ? Stripe : (Color?)null;
-                for (int i = 0; i < headers.Length; i++)
-                {
-                    string txt = i < rows[r].Length ? rows[r][i] : "";
-                    cells.Add(new TableCell(Cell(txt, Body, bg, widths[i], color?.Invoke(r, i), t), widths[i] == 0));
-                }
-                t.Rows.Add(new TableRow(cells));
-            }
-            return t;
-        }
+        public static Control Table(string[] headers, int[] widths, List<string[]> rows, Func<int, int, Color?> color = null)
+            => new TextTable(headers, widths, rows, color);
 
         public static Scrollable Scroll(Control content) =>
             new Scrollable { Content = content, ExpandContentWidth = true, ExpandContentHeight = false, Border = BorderType.None };
