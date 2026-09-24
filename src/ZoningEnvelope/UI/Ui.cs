@@ -25,7 +25,10 @@ namespace ZoningEnvelope.UI
 
         public static Button Btn(string text, Action click)
         {
-            var b = new Button { Text = text, Font = Body };
+            // WPF sizes the button with the default font before our larger one is applied,
+            // so measure the text ourselves and set an explicit size.
+            var m = Body.MeasureString(text);
+            var b = new Button { Text = text, Font = Body, Size = new Size((int)Math.Ceiling(m.Width) + 26, (int)Math.Ceiling(m.Height) + 12) };
             b.Click += (s, e) => click();
             return b;
         }

@@ -34,8 +34,6 @@ namespace ZoningEnvelope.UI
 
         public ZoningPanel(uint documentSerialNumber)
         {
-            Size = new Size(560, 800);
-            MinimumSize = new Size(360, 400);
             Build();
             ZoningSession.Current.Updated += Refresh;
             Refresh();
@@ -149,7 +147,7 @@ namespace ZoningEnvelope.UI
                     _codes.Items.Clear();
                     foreach (var z in zones) _codes.Items.Add(new ListItem { Text = z.DisplayName + (z.BuiltIn ? "" : " *"), Key = z.Id });
                 }
-                _codes.SelectedKey = s.Code?.Id ?? s.Setup.CodeId;
+                _codes.SelectedKey = DisplayCode(s)?.Id;
                 _sprinklered.Checked = s.Setup.Sprinklered;
                 _pitched.Checked = s.Setup.PitchedRoof;
                 _show.Checked = s.ShowEnvelope;
@@ -174,10 +172,14 @@ namespace ZoningEnvelope.UI
             finally { _suppress = false; }
         }
 
+        /// <summary>The rule set to show: the computed one, else the chosen id, else the first zone (before a parcel is set).</summary>
+        private static ZoneCode DisplayCode(ZoningSession s) =>
+            s.Code ?? s.Library.Find(s.Setup.CodeId) ?? s.Library.Zones.FirstOrDefault();
+
         private static List<string[]> BuildRules(ZoningSession s)
         {
             var rows = new List<string[]>();
-            var code = s.Code; var env = s.Envelope;
+            var code = DisplayCode(s); var env = s.Envelope;
             if (code == null) return rows;
             double w = env?.LotWidthFeet ?? 0, d = env?.LotDepthFeet ?? 0;
             bool flagged = s.Setup.Edges.Any(e => e.AdjacentLowDensity);
@@ -214,7 +216,7 @@ namespace ZoningEnvelope.UI
 
         private static string BuildNotes(ZoningSession s)
         {
-            var code = s.Code;
+            var code = DisplayCode(s);
             if (code == null) return "No rule set selected.";
             var sb = new StringBuilder();
             sb.AppendLine(code.DisplayName);

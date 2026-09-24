@@ -19,8 +19,6 @@ namespace ZoningEnvelope.UI
 
         public ZoningCheckPanel(uint documentSerialNumber)
         {
-            Size = new Size(520, 520);
-            MinimumSize = new Size(320, 240);
             Content = new TableLayout { Padding = 8, Rows = { new TableRow(_host) { ScaleHeight = true } } };
             ZoningSession.Current.Updated += Refresh;
             Refresh();
