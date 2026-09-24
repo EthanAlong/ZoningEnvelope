@@ -13,64 +13,55 @@ using ZoningEnvelope.Session;
 
 namespace ZoningEnvelope.UI
 {
-    public class RuleRow
-    {
-        public string Rule { get; set; }
-        public string Value { get; set; }
-        public string Applied { get; set; }
-    }
-
-    public class CheckRow
-    {
-        public string Item { get; set; }
-        public string Allowed { get; set; }
-        public string Massing { get; set; }
-        public string Status { get; set; }
-    }
-
-    public class OpeningsUiRow
-    {
-        public string Edge { get; set; }
-        public string Fsd { get; set; }
-        public string Unprotected { get; set; }
-        public string Protected { get; set; }
-    }
-
     /// <summary>
     /// Docked panel. Header (parcel / massing / code), options, then tabs:
     /// Rules (what the code says and what it means here), Check (compliance + openings),
     /// Plan (2D diagram), Notes (sources, what is not modeled, applied rules).
+    /// Tables are plain wrapped labels so text stays readable at any panel width and DPI.
     /// </summary>
     [System.Runtime.InteropServices.Guid("5a1e8c3d-2b4f-4e7a-9c6d-8f0a1b2c3d4e")]
     public class ZoningPanel : Panel
     {
         public static Guid PanelId => typeof(ZoningPanel).GUID;
 
-        private readonly Label _parcelLabel = new Label { Text = "none" };
-        private readonly Label _massingLabel = new Label { Text = "none" };
-        private readonly DropDown _codes = new DropDown();
-        private readonly CheckBox _sprinklered = new CheckBox { Text = "Sprinklered", Checked = true };
-        private readonly CheckBox _pitched = new CheckBox { Text = "Pitched roof" };
-        private readonly CheckBox _show = new CheckBox { Text = "Show envelope", Checked = true };
-        private readonly GridView _rules = new GridView { ShowHeader = true, GridLines = GridLines.Horizontal };
-        private readonly GridView _checks = new GridView { ShowHeader = true, GridLines = GridLines.Horizontal };
-        private readonly GridView _openings = new GridView { ShowHeader = true, GridLines = GridLines.Horizontal };
+        private static readonly float BaseSize = SystemFonts.Default().Size;
+        private static readonly Font Body = SystemFonts.Default(BaseSize * 1.2f);
+        private static readonly Font BodyBold = SystemFonts.Bold(BaseSize * 1.2f);
+        private static readonly Font Head = SystemFonts.Bold(BaseSize * 1.35f);
+        private static readonly Color Stripe = Color.FromArgb(0, 0, 0, 14);
+        private static readonly Color Muted = Color.FromArgb(110, 110, 110);
+        private static readonly Color Bad = Color.FromArgb(190, 50, 30);
+        private static readonly Color Good = Color.FromArgb(30, 130, 60);
+
+        private readonly Label _parcelLabel = L("none");
+        private readonly Label _massingLabel = L("none");
+        private readonly DropDown _codes = new DropDown { Font = Body };
+        private readonly CheckBox _sprinklered = new CheckBox { Text = "Sprinklered", Checked = true, Font = Body };
+        private readonly CheckBox _pitched = new CheckBox { Text = "Pitched roof", Font = Body };
+        private readonly CheckBox _show = new CheckBox { Text = "Show envelope", Checked = true, Font = Body };
+        private readonly TabPage _rulesPage = new TabPage { Text = "Rules" };
+        private readonly TabPage _checkPage = new TabPage { Text = "Check" };
+        private readonly TabPage _planPage = new TabPage { Text = "Plan" };
+        private readonly TabPage _notesPage = new TabPage { Text = "Notes" };
         private readonly PlanDiagram _plan = new PlanDiagram();
-        private readonly TextArea _notes = new TextArea { ReadOnly = true, Wrap = true };
-        private readonly Label _status = new Label { Text = "", Wrap = WrapMode.Word, TextColor = Color.FromArgb(180, 60, 40) };
-        private readonly Label _summary = new Label { Text = "", Wrap = WrapMode.Word };
+        private readonly TextArea _notes = new TextArea { ReadOnly = true, Wrap = true, Font = Body };
+        private readonly Label _status = new Label { Text = "", Wrap = WrapMode.Word, TextColor = Bad, Font = Body };
         private bool _suppress;
 
         public ZoningPanel(uint documentSerialNumber)
         {
+            Size = new Size(520, 820);
+            MinimumSize = new Size(340, 420);
             Build();
             ZoningSession.Current.Updated += Refresh;
             Refresh();
         }
 
+        private static Label L(string text) => new Label { Text = text, Font = Body, Wrap = WrapMode.Word, VerticalAlignment = VerticalAlignment.Center };
+
         private static Button Btn(string text, Action click)
         {
-            var b = new Button { Text = text, MinimumSize = new Size(0, 0) };
+            var b = new Button { Text = text, Font = Body, MinimumSize = new Size(0, 0) };
             b.Click += (s, e) => click();
             return b;
         }
@@ -99,67 +90,39 @@ namespace ZoningEnvelope.UI
             _pitched.CheckedChanged += opt;
             _show.CheckedChanged += (s, e) => { if (!_suppress) ZoningSession.Current.ShowEnvelope = _show.Checked == true; };
 
-            _rules.Columns.Add(new GridColumn { HeaderText = "Rule", DataCell = new TextBoxCell(nameof(RuleRow.Rule)), Width = 105 });
-            _rules.Columns.Add(new GridColumn { HeaderText = "Code says", DataCell = new TextBoxCell(nameof(RuleRow.Value)), Expand = true });
-            _rules.Columns.Add(new GridColumn { HeaderText = "Here", DataCell = new TextBoxCell(nameof(RuleRow.Applied)), Width = 95 });
-
-            _checks.Columns.Add(new GridColumn { HeaderText = "Check", DataCell = new TextBoxCell(nameof(CheckRow.Item)), Width = 95 });
-            _checks.Columns.Add(new GridColumn { HeaderText = "Allowed", DataCell = new TextBoxCell(nameof(CheckRow.Allowed)), Expand = true });
-            _checks.Columns.Add(new GridColumn { HeaderText = "Massing", DataCell = new TextBoxCell(nameof(CheckRow.Massing)), Width = 90 });
-            _checks.Columns.Add(new GridColumn { HeaderText = "", DataCell = new TextBoxCell(nameof(CheckRow.Status)), Width = 48 });
-
-            _openings.Columns.Add(new GridColumn { HeaderText = "Facade faces", DataCell = new TextBoxCell(nameof(OpeningsUiRow.Edge)), Expand = true });
-            _openings.Columns.Add(new GridColumn { HeaderText = "FSD", DataCell = new TextBoxCell(nameof(OpeningsUiRow.Fsd)), Width = 55 });
-            _openings.Columns.Add(new GridColumn { HeaderText = "Unprot.", DataCell = new TextBoxCell(nameof(OpeningsUiRow.Unprotected)), Width = 80 });
-            _openings.Columns.Add(new GridColumn { HeaderText = "Prot.", DataCell = new TextBoxCell(nameof(OpeningsUiRow.Protected)), Width = 80 });
-
             var header = new TableLayout
             {
-                Spacing = new Size(6, 3),
+                Spacing = new Size(8, 6),
                 Rows =
                 {
-                    new TableRow(new Label { Text = "Parcel" }, new TableCell(_parcelLabel, true), pickParcel, edges),
-                    new TableRow(new Label { Text = "Massing" }, new TableCell(_massingLabel, true), pickMassing, bake),
-                    new TableRow(new Label { Text = "Code" }, new TableCell(_codes, true), reload, edit),
+                    new TableRow(L("Parcel"), new TableCell(_parcelLabel, true), pickParcel, edges),
+                    new TableRow(L("Massing"), new TableCell(_massingLabel, true), pickMassing, bake),
+                    new TableRow(L("Code"), new TableCell(_codes, true), reload, edit),
                 }
             };
             var optRow = new StackLayout
             {
-                Orientation = Orientation.Horizontal, Spacing = 10, VerticalContentAlignment = VerticalAlignment.Center,
+                Orientation = Orientation.Horizontal, Spacing = 14, VerticalContentAlignment = VerticalAlignment.Center,
                 Items = { _sprinklered, _pitched, _show }
             };
 
-            var checkPage = new TableLayout
+            _planPage.Content = _plan;
+            _notesPage.Content = new TableLayout
             {
-                Spacing = new Size(0, 4),
-                Rows =
-                {
-                    new TableRow(_summary),
-                    new TableRow(_checks) { ScaleHeight = true },
-                    new TableRow(new Label { Text = "Exterior wall openings, % of wall per story (CBC 705.8)", Font = SystemFonts.Bold() }),
-                    new TableRow(_openings) { ScaleHeight = true },
-                }
-            };
-            var notesPage = new TableLayout
-            {
-                Spacing = new Size(0, 4),
-                Rows =
-                {
-                    new TableRow(_notes) { ScaleHeight = true },
-                    new TableRow(folder),
-                }
+                Spacing = new Size(0, 6),
+                Rows = { new TableRow(_notes) { ScaleHeight = true }, new TableRow(folder) }
             };
 
             var tabs = new TabControl();
-            tabs.Pages.Add(new TabPage { Text = "Rules", Content = _rules });
-            tabs.Pages.Add(new TabPage { Text = "Check", Content = checkPage });
-            tabs.Pages.Add(new TabPage { Text = "Plan", Content = _plan });
-            tabs.Pages.Add(new TabPage { Text = "Notes", Content = notesPage });
+            tabs.Pages.Add(_rulesPage);
+            tabs.Pages.Add(_checkPage);
+            tabs.Pages.Add(_planPage);
+            tabs.Pages.Add(_notesPage);
 
             Content = new TableLayout
             {
-                Padding = 6,
-                Spacing = new Size(4, 6),
+                Padding = 8,
+                Spacing = new Size(4, 8),
                 Rows =
                 {
                     new TableRow(header),
@@ -169,6 +132,44 @@ namespace ZoningEnvelope.UI
                 }
             };
         }
+
+        // ---------- simple wrapped-label tables ----------
+
+        private static Control Cell(string text, Font font, Color? bg, int width, Color? fg = null)
+        {
+            var l = new Label { Text = text ?? "", Font = font, Wrap = WrapMode.Word, VerticalAlignment = VerticalAlignment.Top };
+            if (fg.HasValue) l.TextColor = fg.Value;
+            if (width > 0) l.Width = width;
+            var p = new Panel { Content = l, Padding = new Padding(5, 4) };
+            if (bg.HasValue) p.BackgroundColor = bg.Value;
+            return p;
+        }
+
+        /// <param name="widths">pixel width per column; 0 = this column takes the remaining width.</param>
+        private static TableLayout Table(string[] headers, int[] widths, List<string[]> rows, Func<int, int, Color?> color = null)
+        {
+            var t = new TableLayout { Spacing = new Size(0, 0) };
+            var h = new List<TableCell>();
+            for (int i = 0; i < headers.Length; i++) h.Add(new TableCell(Cell(headers[i], BodyBold, null, widths[i], Muted), widths[i] == 0));
+            t.Rows.Add(new TableRow(h));
+            for (int r = 0; r < rows.Count; r++)
+            {
+                var cells = new List<TableCell>();
+                Color? bg = r % 2 == 0 ? Stripe : (Color?)null;
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    string txt = i < rows[r].Length ? rows[r][i] : "";
+                    cells.Add(new TableCell(Cell(txt, Body, bg, widths[i], color?.Invoke(r, i)), widths[i] == 0));
+                }
+                t.Rows.Add(new TableRow(cells));
+            }
+            return t;
+        }
+
+        private static Scrollable Scroll(Control content) =>
+            new Scrollable { Content = content, ExpandContentWidth = true, ExpandContentHeight = false, Border = BorderType.None };
+
+        // ---------- actions ----------
 
         private void EditCurrentCode()
         {
@@ -194,6 +195,8 @@ namespace ZoningEnvelope.UI
             catch (Exception ex) { RhinoApp.WriteLine("Zoning Envelope: " + ex.Message); }
         }
 
+        // ---------- refresh ----------
+
         private void Refresh()
         {
             var s = ZoningSession.Current;
@@ -218,10 +221,8 @@ namespace ZoningEnvelope.UI
                     : s.Parcel.EdgeCount + " edges, " + (env?.LotAreaSqFt ?? 0).ToString("#,0") + " sf, " + (env?.LotWidthFeet ?? 0).ToString("0") + " x " + (env?.LotDepthFeet ?? 0).ToString("0") + " ft";
                 _massingLabel.Text = s.Setup.MassingId == Guid.Empty ? "none" : (s.Compliance?.HasMassing == true ? "linked" : "missing");
 
-                _rules.DataStore = BuildRules(s);
-                _checks.DataStore = BuildChecks(s);
-                _openings.DataStore = BuildOpenings(s);
-                _summary.Text = BuildSummary(s);
+                _rulesPage.Content = Scroll(Table(new[] { "Rule", "Code says", "Here" }, new[] { 120, 0, 110 }, BuildRules(s)));
+                _checkPage.Content = Scroll(BuildCheckPage(s));
                 _notes.Text = BuildNotes(s);
 
                 var msgs = new List<string>();
@@ -238,20 +239,21 @@ namespace ZoningEnvelope.UI
         private static string Ft(double v) => v.ToString("0.#") + " ft";
         private static string Sf(double v) => v.ToString("#,0") + " sf";
 
-        private static List<RuleRow> BuildRules(ZoningSession s)
+        private static List<string[]> BuildRules(ZoningSession s)
         {
-            var rows = new List<RuleRow>();
+            var rows = new List<string[]>();
             var code = s.Code; var env = s.Envelope;
             if (code == null) return rows;
             double w = env?.LotWidthFeet ?? 0, d = env?.LotDepthFeet ?? 0;
+            bool flagged = s.Setup.Edges.Any(e => e.AdjacentLowDensity);
 
-            rows.Add(new RuleRow { Rule = "Front setback", Value = code.Setbacks.Front.Describe(), Applied = env == null ? "" : Ft(code.Setbacks.Front.Resolve(w, d, 1)) });
-            rows.Add(new RuleRow { Rule = "Side setback", Value = code.Setbacks.Side.Describe(), Applied = env == null ? "" : Ft(code.Setbacks.Side.Resolve(w, d, 1)) });
-            rows.Add(new RuleRow { Rule = "Rear setback", Value = code.Setbacks.Rear.Describe(), Applied = env == null ? "" : Ft(code.Setbacks.Rear.Resolve(w, d, 1)) });
+            rows.Add(new[] { "Front setback", code.Setbacks.Front.Describe(), env == null ? "" : Ft(code.Setbacks.Front.Resolve(w, d, 1)) });
+            rows.Add(new[] { "Side setback", code.Setbacks.Side.Describe(), env == null ? "" : Ft(code.Setbacks.Side.Resolve(w, d, 1)) });
+            rows.Add(new[] { "Rear setback", code.Setbacks.Rear.Describe(), env == null ? "" : Ft(code.Setbacks.Rear.Resolve(w, d, 1)) });
             if (code.AdjacentLowDensitySetbacks != null)
-                rows.Add(new RuleRow { Rule = code.AdjacentLowDensitySetbacks.Label ?? "Low-density boundary", Value = "side " + code.AdjacentLowDensitySetbacks.SideFeet + " ft, rear " + code.AdjacentLowDensitySetbacks.RearFeet + " ft", Applied = s.Setup.Edges.Any(e => e.AdjacentLowDensity) ? "applied" : "no edge flagged" });
+                rows.Add(new[] { code.AdjacentLowDensitySetbacks.Label ?? "Low-density boundary", "side " + code.AdjacentLowDensitySetbacks.SideFeet + " ft, rear " + code.AdjacentLowDensitySetbacks.RearFeet + " ft", flagged ? "applied" : "no edge flagged" });
             foreach (var st in code.Stepbacks)
-                rows.Add(new RuleRow { Rule = st.Label ?? "Stepback", Value = "+" + st.AdditionalFeet + " ft on " + string.Join("/", st.Sides) + " above story " + st.AboveStory, Applied = "" });
+                rows.Add(new[] { st.Label ?? "Stepback", "+" + st.AdditionalFeet + " ft on " + string.Join("/", st.Sides) + " above story " + st.AboveStory, "" });
 
             string hv;
             if (code.Height.IsUnlimited) hv = "no limit (drawn to " + code.Height.DisplayCapFeet + " ft)";
@@ -261,62 +263,56 @@ namespace ZoningEnvelope.UI
                 if (code.Height.PitchedRoofMaxFeet > 0) hv += " flat / " + code.Height.PitchedRoofMaxFeet + " ft pitched";
             }
             if (code.Height.MaxStories > 0) hv += ", " + code.Height.MaxStories + " stories";
-            rows.Add(new RuleRow { Rule = "Height", Value = hv, Applied = env == null ? "" : Ft(env.HeightFeet) });
+            rows.Add(new[] { "Height", hv, env == null ? "" : Ft(env.HeightFeet) });
             foreach (var p in code.Planes)
-                rows.Add(new RuleRow { Rule = p.Label ?? "Plane", Value = p.StartHeightFeet + " ft at " + (p.FromLotLine ? "lot line" : "setback line") + ", " + p.AngleDegrees + " deg, " + string.Join("/", p.Sides), Applied = "" });
+                rows.Add(new[] { p.Label ?? "Plane", p.StartHeightFeet + " ft at " + (p.FromLotLine ? "lot line" : "setback line") + ", " + p.AngleDegrees + " deg, " + string.Join("/", p.Sides), "" });
             if (code.TransitionalHeight != null)
-                rows.Add(new RuleRow { Rule = code.TransitionalHeight.Label ?? "Transitional height", Value = string.Join("; ", code.TransitionalHeight.Steps.Select(t => "<" + t.UpToFeet + " ft: " + t.MaxHeightFeet + " ft")), Applied = s.Setup.Edges.Any(e => e.AdjacentLowDensity) ? "applied" : "no edge flagged" });
+                rows.Add(new[] { code.TransitionalHeight.Label ?? "Transitional height", string.Join("; ", code.TransitionalHeight.Steps.Select(t => "<" + t.UpToFeet + " ft: " + t.MaxHeightFeet + " ft")), flagged ? "applied" : "no edge flagged" });
             if (code.FloorArea != null && code.FloorArea.Ratio > 0)
-                rows.Add(new RuleRow { Rule = code.FloorArea.Label ?? "FAR", Value = code.FloorArea.Ratio.ToString("0.##") + " x lot area", Applied = env == null ? "" : Sf(code.FloorArea.Ratio * env.LotAreaSqFt) });
+                rows.Add(new[] { code.FloorArea.Label ?? "FAR", code.FloorArea.Ratio.ToString("0.##") + " x lot area", env == null ? "" : Sf(code.FloorArea.Ratio * env.LotAreaSqFt) });
             if (code.Coverage != null && code.Coverage.MaxPercent > 0)
-                rows.Add(new RuleRow { Rule = "Lot coverage", Value = code.Coverage.MaxPercent + "%", Applied = env == null ? "" : Sf(code.Coverage.MaxPercent / 100.0 * env.LotAreaSqFt) });
+                rows.Add(new[] { "Lot coverage", code.Coverage.MaxPercent + "%", env == null ? "" : Sf(code.Coverage.MaxPercent / 100.0 * env.LotAreaSqFt) });
             if (code.Density != null && code.Density.LotAreaPerUnitSqFt > 0)
-                rows.Add(new RuleRow { Rule = "Density", Value = code.Density.Describe(), Applied = env == null ? "" : code.Density.MaxUnitsFor(env.LotAreaSqFt) + " units" });
+                rows.Add(new[] { "Density", code.Density.Describe(), env == null ? "" : code.Density.MaxUnitsFor(env.LotAreaSqFt) + " units" });
             return rows;
         }
 
-        private static string BuildSummary(ZoningSession s)
+        private Control BuildCheckPage(ZoningSession s)
         {
-            var env = s.Envelope;
-            if (env == null) return "Set a parcel to see the envelope.";
+            var stack = new StackLayout { Orientation = Orientation.Vertical, HorizontalContentAlignment = HorizontalAlignment.Stretch, Spacing = 8, Padding = new Padding(0, 4) };
+            var env = s.Envelope; var c = s.Compliance;
+            if (env == null)
+            {
+                stack.Items.Add(L("Set a parcel to see the envelope."));
+                return stack;
+            }
             var sb = new StringBuilder();
-            sb.Append("Envelope: ").Append(Ft(env.HeightFeet)).Append(" high, footprint ").Append(Sf(env.FootprintSqFt))
-              .Append(" of ").Append(Sf(env.LotAreaSqFt)).Append(" lot, ").Append(env.VolumeCuFt.ToString("#,0")).Append(" cf.");
-            if (s.Compliance != null && !s.Compliance.HasMassing) sb.Append("  Link a massing to check it.");
-            return sb.ToString();
-        }
+            sb.Append("Envelope ").Append(Ft(env.HeightFeet)).Append(" high, footprint ").Append(Sf(env.FootprintSqFt))
+              .Append(" of a ").Append(Sf(env.LotAreaSqFt)).Append(" lot, ").Append(env.VolumeCuFt.ToString("#,0")).Append(" cf.");
+            if (c != null && !c.HasMassing) sb.Append("  Link a massing to check it.");
+            stack.Items.Add(L(sb.ToString()));
 
-        private static List<CheckRow> BuildChecks(ZoningSession s)
-        {
-            var rows = new List<CheckRow>();
-            var c = s.Compliance; var env = s.Envelope;
-            if (c == null || env == null) return rows;
-            bool m = c.HasMassing;
-            string Ok(bool ok) => !m ? "" : (ok ? "OK" : "OVER");
-            rows.Add(new CheckRow { Item = "Height", Allowed = Ft(env.HeightFeet), Massing = m ? Ft(c.HeightFeet) : "", Status = Ok(c.HeightOk) });
-            rows.Add(new CheckRow { Item = "Envelope", Allowed = "inside", Massing = m ? (c.ExcessVolumeCuFt.HasValue ? c.ExcessVolumeCuFt.Value.ToString("#,0") + " cf out" : "n/a") : "", Status = m && !c.ExcessVolumeCuFt.HasValue ? "?" : Ok(c.EnvelopeOk) });
-            if (c.AllowedFloorAreaSqFt > 0)
-                rows.Add(new CheckRow { Item = c.FloorAreaLabel, Allowed = Sf(c.AllowedFloorAreaSqFt), Massing = m ? Sf(c.GrossFloorAreaSqFt) : "", Status = Ok(c.FloorAreaOk) });
-            else if (m)
-                rows.Add(new CheckRow { Item = "Floor area", Allowed = "no rule", Massing = Sf(c.GrossFloorAreaSqFt), Status = "" });
-            if (c.AllowedCoverageSqFt > 0)
-                rows.Add(new CheckRow { Item = "Coverage", Allowed = Sf(c.AllowedCoverageSqFt), Massing = m ? Sf(c.FootprintSqFt) : "", Status = Ok(c.CoverageOk) });
-            else if (m)
-                rows.Add(new CheckRow { Item = "Footprint", Allowed = Sf(env.FootprintSqFt) + " buildable", Massing = Sf(c.FootprintSqFt), Status = "" });
-            if (c.MaxUnits > 0)
-                rows.Add(new CheckRow { Item = "Units", Allowed = c.MaxUnits.ToString("0"), Massing = "", Status = "" });
-            return rows;
-        }
+            if (c != null)
+            {
+                bool m = c.HasMassing;
+                string Ok(bool ok) => !m ? "" : (ok ? "OK" : "OVER");
+                var rows = new List<string[]>();
+                rows.Add(new[] { "Height", Ft(env.HeightFeet), m ? Ft(c.HeightFeet) : "", Ok(c.HeightOk) });
+                rows.Add(new[] { "Envelope", "inside", m ? (c.ExcessVolumeCuFt.HasValue ? c.ExcessVolumeCuFt.Value.ToString("#,0") + " cf outside" : "n/a") : "", m && !c.ExcessVolumeCuFt.HasValue ? "?" : Ok(c.EnvelopeOk) });
+                if (c.AllowedFloorAreaSqFt > 0) rows.Add(new[] { c.FloorAreaLabel, Sf(c.AllowedFloorAreaSqFt), m ? Sf(c.GrossFloorAreaSqFt) : "", Ok(c.FloorAreaOk) });
+                else if (m) rows.Add(new[] { "Floor area", "no rule", Sf(c.GrossFloorAreaSqFt), "" });
+                if (c.AllowedCoverageSqFt > 0) rows.Add(new[] { "Coverage", Sf(c.AllowedCoverageSqFt), m ? Sf(c.FootprintSqFt) : "", Ok(c.CoverageOk) });
+                else if (m) rows.Add(new[] { "Footprint", Sf(env.FootprintSqFt) + " buildable", Sf(c.FootprintSqFt), "" });
+                if (c.MaxUnits > 0) rows.Add(new[] { "Units", c.MaxUnits.ToString("0"), "", "" });
+                stack.Items.Add(Table(new[] { "Check", "Allowed", "Massing", "" }, new[] { 100, 0, 120, 60 }, rows,
+                    (r, i) => i == 3 ? (rows[r][3] == "OK" ? Good : rows[r][3] == "OVER" ? Bad : (Color?)null) : null));
 
-        private static List<OpeningsUiRow> BuildOpenings(ZoningSession s)
-        {
-            var rows = new List<OpeningsUiRow>();
-            var c = s.Compliance;
-            if (c == null) return rows;
-            foreach (var o in c.Openings)
-                rows.Add(new OpeningsUiRow { Edge = o.Label, Fsd = o.FsdFeet.ToString("0.#") + "'", Unprotected = o.Allowed, Protected = o.AllowedProtected });
-            if (rows.Count == 0 && c.HasMassing) rows.Add(new OpeningsUiRow { Edge = "no vertical facade found", Fsd = "", Unprotected = "", Protected = "" });
-            return rows;
+                stack.Items.Add(new Label { Text = "Exterior wall openings, % of wall per story (CBC 705.8)", Font = Head, Wrap = WrapMode.Word });
+                var orows = c.Openings.Select(o => new[] { o.Label, o.FsdFeet.ToString("0.#") + " ft", o.Allowed + (s.Setup.Sprinklered ? "" : " (no sprinklers)"), o.AllowedProtected }).ToList();
+                if (orows.Count == 0) orows.Add(new[] { m ? "no vertical facade found" : "link a massing", "", "", "" });
+                stack.Items.Add(Table(new[] { "Facade faces", "FSD", "Unprotected", "Protected" }, new[] { 0, 70, 120, 110 }, orows));
+            }
+            return stack;
         }
 
         private static string BuildNotes(ZoningSession s)

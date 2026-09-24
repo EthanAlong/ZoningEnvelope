@@ -98,18 +98,12 @@ namespace ZoningEnvelope.Engine
                 r.Stories.Add(fp);
                 var brep = Extrude(poly, fp.BottomZ, fp.TopZ, tol);
                 if (brep != null) r.Breps.Add(brep);
+                else r.Warnings.Add("Story " + k + " could not be extruded.");
                 bottom = top;
             }
             if (r.Stories.Count == 0) return r;
             r.FootprintSqFt = PolygonClip.Area(r.Stories[0].Polygon) * modelToFt * modelToFt;
-
-            // union the slabs into one solid (keeps the plan diagram/story list intact either way)
-            if (r.Breps.Count > 1)
-            {
-                var u = Brep.CreateBooleanUnion(r.Breps, tol);
-                if (u != null && u.Length > 0) { r.Breps.Clear(); r.Breps.AddRange(u); }
-                else r.Warnings.Add("Story slabs could not be unioned; showing them separately.");
-            }
+            if (r.Breps.Count == 0) { r.Warnings.Add("No envelope solid could be built."); return r; }
 
             r.AppliedRules.Add(DescribeSetbacks(code, r));
             r.AppliedRules.Add(code.Height.IsUnlimited
@@ -119,7 +113,7 @@ namespace ZoningEnvelope.Engine
 
             // ---- cutters ----
             double big = Math.Max(parcel.BoundingBox.Diagonal.Length * 20, H * ftToModel * 20);
-            var cutters = new List<Brep>();
+            var cutters = new List<Cutter>();
 
             foreach (var plane in code.Planes ?? new List<PlaneRule>())
             {
@@ -130,7 +124,7 @@ namespace ZoningEnvelope.Engine
                     if (!plane.AppliesTo(es.Role)) continue;
                     double sb = plane.FromLotLine ? 0 : r.Stories[0].SetbacksFeet[i];
                     var c = PlaneCutter(parcel.Edges[i], sb * ftToModel, parcel.Grade + plane.StartHeightFeet * ftToModel, plane.AngleDegrees, big);
-                    if (c != null) { cutters.Add(c); any = true; }
+                    if (c.HasValue) { cutters.Add(new Cutter { Label = plane.Label ?? "Plane", Box = c.Value, HalfSpace = true }); any = true; }
                 }
                 if (any) r.AppliedRules.Add((plane.Label ?? "Plane") + ": " + plane.StartHeightFeet + " ft at " + (plane.FromLotLine ? "lot line" : "setback line") + ", " + plane.AngleDegrees + " deg");
             }
@@ -146,7 +140,12 @@ namespace ZoningEnvelope.Engine
                     foreach (var s in steps)
                     {
                         if (s.MaxHeightFeet < H)
-                            cutters.Add(BandCutter(parcel.Edges[i], prev * ftToModel, s.UpToFeet * ftToModel, parcel.Grade + s.MaxHeightFeet * ftToModel, big));
+                            cutters.Add(new Cutter
+                            {
+                                Label = code.TransitionalHeight.Label ?? "Transitional height",
+                                Box = BandCutter(parcel.Edges[i], prev * ftToModel, s.UpToFeet * ftToModel, parcel.Grade + s.MaxHeightFeet * ftToModel, big),
+                                HalfSpace = false
+                            });
                         prev = s.UpToFeet;
                         any = true;
                     }
@@ -156,17 +155,43 @@ namespace ZoningEnvelope.Engine
                 else r.AppliedRules.Add((code.TransitionalHeight.Label ?? "Transitional height") + ": no edge flagged 'adjacent low density', not applied");
             }
 
+            // Slabs are cut one by one (no union first: a union of stacked slabs is the
+            // most fragile input a boolean can get). A failed cut keeps the uncut part
+            // and says so, rather than dropping the envelope.
             foreach (var cutter in cutters)
             {
+                var cutterBrep = cutter.Box.ToBrep();
                 var next = new List<Brep>();
                 foreach (var b in r.Breps)
                 {
-                    var diff = Brep.CreateBooleanDifference(b, cutter, tol);
-                    if (diff == null) { next.Add(b); r.Warnings.Add("A plane cut failed on part of the envelope; that part is shown uncut."); }
+                    var bb = b.GetBoundingBox(true);
+                    int inside = 0;
+                    foreach (var corner in bb.GetCorners()) if (cutter.Box.Contains(corner)) inside++;
+                    if (inside == 8) continue;                                        // whole part removed
+                    if (inside == 0 && cutter.HalfSpace) { next.Add(b); continue; }  // plane misses this part
+                    Brep[] diff = null;
+                    try { diff = Brep.CreateBooleanDifference(b, cutterBrep, tol); } catch { }
+                    if (diff == null || diff.Length == 0)
+                    {
+                        next.Add(b);
+                        r.Warnings.Add(cutter.Label + ": boolean cut failed on one part of the envelope; that part is shown uncut.");
+                    }
                     else next.AddRange(diff);
                 }
                 r.Breps.Clear();
                 r.Breps.AddRange(next);
+            }
+
+            // optional: merge the pieces into one solid for a cleaner display / bake
+            if (r.Breps.Count > 1)
+            {
+                Brep[] u = null;
+                try { u = Brep.CreateBooleanUnion(r.Breps, tol); } catch { }
+                if (u != null && u.Length > 0 && u.Length < r.Breps.Count && u.All(x => x.IsSolid))
+                {
+                    r.Breps.Clear();
+                    r.Breps.AddRange(u);
+                }
             }
 
             foreach (var b in r.Breps)
@@ -214,8 +239,16 @@ namespace ZoningEnvelope.Engine
             return brep;
         }
 
+        private class Cutter
+        {
+            public string Label;
+            public Box Box;
+            /// <summary>True when the box stands in for a half-space (a plane rule), so a bounding-box test can skip it.</summary>
+            public bool HalfSpace;
+        }
+
         /// <summary>Half-space above a plane that passes through the (offset) edge line at startZ and rises inward at angleDeg.</summary>
-        private static Brep PlaneCutter(ParcelEdge e, double offset, double startZ, double angleDeg, double big)
+        private static Box? PlaneCutter(ParcelEdge e, double offset, double startZ, double angleDeg, double big)
         {
             double a = angleDeg * Math.PI / 180.0;
             var origin = new Point3d(e.A.X + e.Inward.X * offset, e.A.Y + e.Inward.Y * offset, startZ);
@@ -224,16 +257,14 @@ namespace ZoningEnvelope.Engine
             if (normal.Z < 0) normal = -normal;
             if (!normal.Unitize()) return null;
             var plane = new Plane(origin, normal);
-            var box = new Box(plane, new Interval(-big, big), new Interval(-big, big), new Interval(0, big));
-            return box.ToBrep();
+            return new Box(plane, new Interval(-big, big), new Interval(-big, big), new Interval(0, big));
         }
 
         /// <summary>Everything above maxZ in the band [d0, d1] measured inward from the edge line.</summary>
-        private static Brep BandCutter(ParcelEdge e, double d0, double d1, double maxZ, double big)
+        private static Box BandCutter(ParcelEdge e, double d0, double d1, double maxZ, double big)
         {
             var plane = new Plane(e.A, e.Direction, e.Inward);
-            var box = new Box(plane, new Interval(-big, big), new Interval(d0, d1), new Interval(maxZ - e.A.Z, big));
-            return box.ToBrep();
+            return new Box(plane, new Interval(-big, big), new Interval(d0, d1), new Interval(maxZ - e.A.Z, big));
         }
     }
 }

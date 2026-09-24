@@ -17,8 +17,8 @@ namespace ZoningEnvelope.UI
         private static readonly Color Env = Color.FromArgb(40, 140, 255);
         private static readonly Color Massing = Color.FromArgb(230, 120, 30);
 
-        private readonly Font _font = Fonts.Sans(8);
-        private readonly Font _small = Fonts.Sans(7);
+        private readonly Font _font = SystemFonts.Default(SystemFonts.Default().Size * 1.2f);
+        private readonly Font _small = SystemFonts.Default(SystemFonts.Default().Size * 1.05f);
 
         protected override void OnPaint(PaintEventArgs e)
         {

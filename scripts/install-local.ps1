@@ -1,4 +1,4 @@
-# Build the plugin, copy it to a versioned folder under Rhino's packages directory,
+# Build the plugin, copy it to a versioned folder under Rhino's per-user Plug-ins directory,
 # and register it with Rhino 8 so it loads at startup.
 # Usage:  powershell -ExecutionPolicy Bypass -File scripts\install-local.ps1 [-Configuration Release]
 # Close Rhino first if it already has the plugin loaded (the .rhp is locked while loaded).
@@ -21,7 +21,9 @@ if (-not $version) { $version = "0.1.0" }
 $rhp = Join-Path $dist "ZoningEnvelope.rhp"
 if (-not (Test-Path $rhp)) { throw "not found: $rhp" }
 
-$dest = Join-Path $env:APPDATA "McNeel\Rhinoceros\packages\8.0\ZoningEnvelope\$version"
+# NOT the packages\ folder: Rhino's PackageManager deletes anything there it did not install itself.
+# This is the per-user plug-in folder the PlugInManager uses.
+$dest = Join-Path $env:APPDATA "McNeel\Rhinoceros\8.0\Plug-ins\ZoningEnvelope ($pluginGuid)\$version"
 New-Item -ItemType Directory -Force $dest | Out-Null
 $destRhp = Join-Path $dest "ZoningEnvelope.rhp"
 try {
@@ -31,13 +33,9 @@ try {
     throw "Could not overwrite $destRhp. Close Rhino and run this script again. ($($_.Exception.Message))"
 }
 
-@"
-name: zoningenvelope
-version: $version
-authors:
-  - Ethan Huang
-description: Zoning code to buildable envelope, live in Rhino.
-"@ | Out-File (Join-Path $dest "manifest.yml") -Encoding utf8
+# remove the old copy under packages\ if a previous version of this script put one there
+$stale = Join-Path $env:APPDATA "McNeel\Rhinoceros\packages\8.0\ZoningEnvelope"
+if (Test-Path $stale) { Remove-Item $stale -Recurse -Force -ErrorAction SilentlyContinue }
 
 # Register with Rhino 8 (same keys the PlugInManager writes). LoadMode 2 = load at startup.
 $key = "HKCU:\Software\McNeel\Rhinoceros\8.0\Plug-Ins\$pluginGuid"

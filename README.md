@@ -126,11 +126,12 @@ powershell -ExecutionPolicy Bypass -File scripts\install-local.ps1
 ```
 
 This builds to `dist\ZoningEnvelope.rhp`, copies it to
-`%APPDATA%\McNeel\Rhinoceros\packages\8.0\ZoningEnvelope\<version>\`, and writes
-the same registry entry the PlugInManager writes (load at startup). Close Rhino
-before running it when the plugin is already loaded; the `.rhp` is locked while
-loaded. Dragging the `.rhp` onto the Rhino window also works, but registers it
-as load-on-demand.
+`%APPDATA%\McNeel\Rhinoceros\8.0\Plug-ins\ZoningEnvelope (<guid>)\<version>\`, and
+writes the same registry entry the PlugInManager writes (load at startup). Do
+not put it under `packages\`: Rhino's Package Manager deletes folders there
+that it did not install itself. Close Rhino before running the script when the
+plugin is already loaded; the `.rhp` is locked while loaded. Dragging the
+`.rhp` onto the Rhino window also works, but registers it as load-on-demand.
 
 Engine smoke test (no Rhino needed):
 
