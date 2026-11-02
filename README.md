@@ -1,32 +1,88 @@
-# Zoning Envelope for Rhino 8
+# Zoning Envelope
 
-Turns a zoning rule set (setbacks, height, encroachment / daylight planes,
-transitional height, FAR, coverage) into a live buildable envelope on a parcel,
-and checks a massing against it. Rules live in small JSON files, so adding a
-new zone is a new file, not new code. Exterior-wall opening limits (CBC / IBC
-Table 705.8) are reported per facade from the fire separation distance.
+**See what the zoning code allows, live, on the parcel.**
 
-Status: prototype for design-feasibility conversations. Every rule set carries
-its source and a `verified` note. Confirm numbers against the current code text
-before relying on them. See `docs/CODE-NOTES.md`.
+A Rhino 8 plugin that turns a zoning rule set (setbacks, height, daylight /
+encroachment planes, transitional height, FAR, coverage, density) into the
+buildable envelope on a parcel, and checks a massing against it while you
+design. Per-facade exterior-wall opening limits (CBC / IBC Table 705.8) come
+out of the same geometry.
+
+<sub>Rhino 8 · C# / RhinoCommon · Eto · JSON rule sets · v0.6 · prototype for feasibility conversations</sub>
+
+---
+
+## Problem
+
+Early feasibility runs on a loop: an architect sketches a massing, someone
+reads the zoning code, someone else redraws the setbacks, and the answer to
+"does this fit?" arrives a day later, after the design has moved. The rules
+are well defined; they just are not in the model.
 
 ## What it does
 
-1. Pick a closed polyline as the parcel and click the front (street) edge.
-   Rear and side edges are assigned automatically; change them with `ZoneEdgeFlags`.
-2. Choose a rule set in the panel. The envelope appears in the viewport as a
-   translucent blue solid; setback lines and edge labels are drawn on the ground.
-3. Pick a massing (polysurface, extrusion, mesh or SubD). The panel shows height,
-   floor area vs FAR, footprint vs coverage, volume outside the envelope (drawn
-   in red), and the allowed opening percentage for each facade.
-4. Move or edit the parcel, the massing, or the rule JSON; everything recomputes
-   on the next idle tick.
+1. Pick the parcel curve and click the street edge. Side and rear edges are
+   assigned automatically (`ZoneEdgeFlags` to change them).
+2. Choose a rule set. The envelope appears as a translucent solid; setback
+   lines and edge labels are drawn on the ground.
+3. Link a massing. The **Zoning Check** panel shows height, floor area vs FAR,
+   footprint vs coverage, volume outside the envelope (drawn in red) and the
+   allowed opening percentage on every facade.
+4. Move the parcel, edit the massing or save the rule JSON: everything
+   recomputes on the next idle tick.
 
-Three dockable panels: **Zoning Envelope** (parcel, massing, rule set, options,
-the rule table and the notes: sources, what is not modeled, rules applied),
-**Zoning Plan** (2D diagram of the parcel with setbacks and story footprints)
-and **Zoning Check** (compliance and opening limits per facade). The 3D
-envelope is drawn in Rhino's own viewport rather than a second 3D pane.
+## Architecture
+
+```mermaid
+flowchart LR
+  JSON["Rule sets (JSON)<br/>built-in + %APPDATA% overrides<br/>(folder watched)"] --> LIB[CodeLibrary]
+  PARCEL["Parcel curve<br/>+ edge roles on the curve"] --> PG[ParcelGeometry]
+  LIB --> EB[EnvelopeBuilder<br/>half-plane clip per story → union<br/>→ plane / transitional cuts]
+  PG --> EB
+  EB --> CO[Compliance<br/>height · FAR · coverage<br/>excess volume · FSD → openings]
+  MASS[Linked massing] --> CO
+  DOCEV["Rhino document events"] --> SES[ZoningSession<br/>idle recompute]
+  SES --> EB
+  EB --> DISP[EnvelopeConduit<br/>viewport display]
+  CO --> UI["Eto panels<br/>Envelope · Plan · Check"]
+```
+
+- **Rules are data.** Each jurisdiction is one JSON file that carries its
+  `source` (code section) and a `verified` note. A new zone is a new file,
+  not a new build, and a user file with the same `id` overrides the
+  built-in one.
+- **Live, but never in the way.** Document events only mark the session
+  dirty; geometry is rebuilt on Rhino's idle event, so dragging a massing
+  stays smooth.
+- **Display before bake.** The envelope is drawn by a display conduit and
+  only enters the document on `ZoneBake`, so it never pollutes the model.
+
+## Demo
+
+<!-- TODO: 20–30 s GIF: pick parcel → pick zone → drag massing until the red excess volume disappears. -->
+
+Typical run, about a minute: open a site plan, `ZoneEnvelope`,
+`ZoneSetParcel` (click near the street edge), pick `lamc-r3-hd1`,
+`ZoneSetMassing`, then push the massing until the red excess volume and the
+FAR warning clear.
+
+The engine also runs without Rhino:
+
+```powershell
+dotnet run --project tests\EngineSmoke
+```
+
+## Design decisions and trade-offs
+
+- **Show sources, never hide uncertainty.** Every rule set is labelled with
+  where it came from and when it was checked; the panel lists what is *not*
+  modeled. This is a feasibility aid, not a zoning determination
+  (see [`docs/CODE-NOTES.md`](docs/CODE-NOTES.md)).
+- **Convex parcels.** Setbacks are half-plane clips, which is fast and robust
+  but over-cuts a concave corner. Acceptable for the lots this targets;
+  a straight-skeleton offset is the fix if it is not.
+- **What the tool cannot see stays a note.** Prevailing setbacks, hillside
+  rules, overlays and density bonuses are listed per rule set, not guessed.
 
 ## Commands
 
@@ -99,7 +155,7 @@ narrow-lot override, then min/max, then per-story growth. Stepbacks add on top
 for stories above `aboveStory`. `maxFeet: 0` on height means no limit; the
 envelope is drawn to `displayCapFeet`.
 
-## How the envelope is built
+## How the envelope is built (detail)
 
 1. Parcel polyline oriented counter-clockwise; each edge gets a role.
 2. For each story (or once, if no rule depends on the story) the parcel polygon
